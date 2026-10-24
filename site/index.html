@@ -164,20 +164,25 @@
     <div class="container">
       <div class="section__head">
         <h2 id="settings-head">Set up in one window.</h2>
-        <p class="lead">Shortcuts, startup, and a live check of the macOS settings that get in the way.</p>
+        <p class="lead">Shortcuts, swipes, startup, and a live check of the macOS settings that get in the way.</p>
       </div>
       <div class="switch" data-switch>
         <div class="seg" role="tablist" aria-label="Settings tabs">
           <button class="chip" role="tab" type="button" id="tab-general" aria-controls="panel-general" aria-selected="true">General</button>
+          <button class="chip" role="tab" type="button" id="tab-windows" aria-controls="panel-windows" aria-selected="false" tabindex="-1">Windows</button>
           <button class="chip" role="tab" type="button" id="tab-shortcuts" aria-controls="panel-shortcuts" aria-selected="false" tabindex="-1">Shortcuts</button>
           <button class="chip" role="tab" type="button" id="tab-about" aria-controls="panel-about" aria-selected="false" tabindex="-1">About</button>
         </div>
         <div class="switch__panel" role="tabpanel" id="panel-general" aria-labelledby="tab-general">
-          <img class="shot" src="assets/settings-general.webp" width="1239" height="1279" loading="lazy" alt="SlideScroll Settings, General tab: launch at login, a setup check reading “Nothing in macOS is getting in SlideScroll’s way”, and verbose logging.">
-          <p class="switch__note">Launch at login, and a check that flags macOS settings that fight SlideScroll, with a button to fix each one.</p>
+          <img class="shot" src="assets/settings-general.webp?v=2" width="1240" height="1276" loading="lazy" alt="SlideScroll Settings, General tab: launch at login, automatic update checks, and a setup check warning that macOS also uses four-finger swipes, with a button to open System Settings.">
+          <p class="switch__note">Launch at login, automatic updates, and a check that flags macOS settings that fight SlideScroll, with the way to fix each one.</p>
+        </div>
+        <div class="switch__panel" role="tabpanel" id="panel-windows" aria-labelledby="tab-windows" hidden>
+          <img class="shot" src="assets/settings-windows.webp?v=2" width="1240" height="1280" loading="lazy" alt="SlideScroll Settings, Windows tab: swipe with three or four fingers, natural direction, the space between windows, and apps that always float.">
+          <p class="switch__note">Three- or four-finger swipes, which way the strip moves, the gap between windows, and apps that stay off the strip.</p>
         </div>
         <div class="switch__panel" role="tabpanel" id="panel-shortcuts" aria-labelledby="tab-shortcuts" hidden>
-          <img class="shot" src="assets/settings-shortcuts.webp" width="1238" height="1279" loading="lazy" alt="SlideScroll Settings, Shortcuts tab: every action with two shortcut slots, shown in the keyboard’s own labels.">
+          <img class="shot" src="assets/settings-shortcuts.webp?v=2" width="1240" height="1280" loading="lazy" alt="SlideScroll Settings, Shortcuts tab: every action with two shortcut slots, shown in the keyboard’s own labels.">
           <p class="switch__note">Every action takes two shortcuts, shown the way your own keyboard labels them. Click one and press new keys.</p>
         </div>
         <div class="switch__panel" role="tabpanel" id="panel-about" aria-labelledby="tab-about" hidden>
