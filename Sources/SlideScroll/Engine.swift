@@ -644,9 +644,10 @@ final class Engine {
                 strip.columns[c].weights[row] = saved.columns[si].weight
                 if let w = saved.columns[si].ownWidth { strip.columns[c].widths[row] = clampWidth(w) }
             }
-            if let si = savedAt[strip.columns[c].windows[0]], saved.columns[si].tabbed, !strip.columns[c].tabbed {
+            // Tabs the user chose come back; ones an earlier version added
+            // because the stack didn't fit don't: such stacks overlap now.
+            if let si = savedAt[strip.columns[c].windows[0]], saved.columns[si].tabbed, !saved.columns[si].autoTabbed {
                 strip.columns[c].tabbed = true
-                strip.columns[c].autoTabbed = saved.columns[si].autoTabbed
             }
         }
         return changed
@@ -729,7 +730,7 @@ final class Engine {
                     columns.append(SavedColumn(
                         id: id, app: appNames[id] ?? "", title: w.title ?? "", width: c.width,
                         restoreWidth: c.restoreWidth, stacked: row > 0, weight: weight, tabbed: c.tabbed,
-                        autoTabbed: c.autoTabbed, display: m.display.id, height: c.height,
+                        autoTabbed: false, display: m.display.id, height: c.height,
                         ownWidth: c.windows.count > 1 ? c.widths[row] : nil))
                 }
             }
@@ -810,6 +811,12 @@ final class Engine {
 
     // MARK: - Layout
 
+    /// Where a monitor's windows go, given what we know of the shortest each
+    /// app will make its window: a stack that can't fit overlaps.
+    private func frames(_ mi: Int) -> [(WID, Rect)] {
+        monitors[mi].strip.frames(monitors[mi].viewport) { [anims] in anims[$0]?.minHeight ?? 0 }
+    }
+
     /// Recompute every on-screen strip and point each window's spring at its new spot.
     private func retarget() {
         for mi in monitors.indices where !monitors[mi].away {
@@ -828,31 +835,9 @@ final class Engine {
         // what the app really took (see `resized`): apps may refuse sizes
         // below their minimum, and the layout then makes room for that.
         requestSizes(mi)
-        // A stack whose apps won't go short enough to share the column would
-        // run off the bottom of the screen. Show it as tabs instead, where
-        // each window gets the column's full height. Only stacks whose sizes
-        // have all come back count: until then the heights are stale.
-        let strip = monitors[mi].strip
-        let fullH = vp.h - 2 * strip.gap
-        let overflowing = strip.allColumns.filter { c in
-            guard !c.tabbed, c.windows.count > 1, !c.windows.contains(where: dragging.contains) else { return false }
-            let col = c.windows.compactMap { anims[$0] }
-            let gaps = strip.gap * Double(c.windows.count - 1)
-            // The shortest each app has agreed to go already don't fit: no
-            // share of the height can work, so don't wait for more answers.
-            // Waiting would bounce the windows between their minimums forever.
-            if col.reduce(0, { $0 + $1.minHeight }) + gaps > fullH + 1 { return true }
-            let heights = col.reduce(0) { $0 + $1.appliedSize.height }
-            return col.allSatisfy { $0.resizing == nil } && heights + gaps > fullH + 1
-        }.map { $0.windows[0] }
-        for id in overflowing {
-            Log.info("the windows stacked with \(id) are too tall to share a column; showing them as tabs")
-            monitors[mi].strip.withColumn(of: id) { $0.fitAsTabs() }
-        }
-        if !overflowing.isEmpty { requestSizes(mi) }
         if !swiping { monitors[mi].strip.ensureFocusedVisible(vp.w) }
 
-        for (id, frame) in monitors[mi].strip.frames(vp) where anims[id] != nil {
+        for (id, frame) in frames(mi) where anims[id] != nil {
             // With Reduce Motion on, only the fingers move windows smoothly.
             if reduceMotion && !swiping {
                 anims[id]!.jump(to: CGPoint(x: frame.x, y: frame.y))
@@ -866,7 +851,7 @@ final class Engine {
     /// from its frame. Sizes are applied on the app's queue, so a slow app
     /// never holds up the animation.
     private func requestSizes(_ mi: Int) {
-        for (id, frame) in monitors[mi].strip.frames(monitors[mi].viewport) where !dragging.contains(id) {
+        for (id, frame) in frames(mi) where !dragging.contains(id) {
             guard let win = windows[id], let a = anims[id] else { continue }
             let has = a.resizing ?? a.answered ?? a.appliedSize
             if abs(has.width - frame.w) > 0.5 || abs(has.height - frame.h) > 0.5 {
@@ -902,15 +887,20 @@ final class Engine {
             monitors[mi].strip.withColumn(of: id) { $0.width = got.width }
             changed = true
         }
-        // Too tall for its share of a stack: its neighbour makes room.
-        let stack = monitors[mi].strip.column(of: id).flatMap { $0.windows.count > 1 && !$0.tabbed ? $0.windows : nil }
-        if stack != nil && got.height > want.height + 1
-            && monitors[mi].strip.resizeWindow(id, height: got.height, topEdge: nil, viewport: vp) {
-            changed = true
+        // Too tall for its share of a stack: its neighbour makes room. If the
+        // shortest heights of the stack's apps can't share the column at all,
+        // the layout overlaps them instead, and moving the shared edge would
+        // only bounce the windows between their minimums.
+        if got.height > want.height + 1, let stack = monitors[mi].strip.column(of: id),
+           stack.windows.count > 1, !stack.tabbed {
+            let gaps = monitors[mi].strip.gap * Double(stack.windows.count - 1)
+            let fullH = vp.h - 2 * monitors[mi].strip.gap
+            let mins = stack.windows.reduce(0) { $0 + (anims[$1]?.minHeight ?? 0) }
+            if mins + gaps > fullH + 1 || monitors[mi].strip.resizeWindow(id, height: got.height, topEdge: nil, viewport: vp) {
+                changed = true
+            }
         }
-        // The last of a stack to answer: see whether the stack still fits.
-        let stackSettled = stack?.allSatisfy { anims[$0]?.resizing == nil } ?? false
-        if changed || stackSettled { retargetMonitor(mi) }
+        if changed { retargetMonitor(mi) }
     }
 
     /// Shrink a lone window's column to fit the window when its app won't
@@ -980,7 +970,7 @@ final class Engine {
         let vp = monitors[swipeMonitor].viewport
         // Natural direction: fingers moving left drag the strip left.
         monitors[swipeMonitor].strip.scrollBy(-dx * swipeSpeed * vp.w, vp.w)
-        for (id, frame) in monitors[swipeMonitor].strip.frames(vp) where anims[id] != nil {
+        for (id, frame) in frames(swipeMonitor) where anims[id] != nil {
             anims[id]!.aim(frame.x, frame.y, stiffness: followStiffness)
         }
     }
@@ -1051,7 +1041,7 @@ final class Engine {
         // Hit-test the layout rather than the screen: the dragged window is
         // on top of whatever is under the pointer. Scrolling columns only
         // show between the pinned ones, which are on top of them.
-        guard let (target, f) = m.strip.frames(vp).first(where: { w, f in
+        guard let (target, f) = frames(mi).first(where: { w, f in
             let clip = pinned.contains(w) ? vp : inner
             return w != id && p.x >= max(f.x, clip.x) && p.x < min(f.x + f.w, clip.x + clip.w) && p.y >= f.y && p.y < f.y + f.h
         }) else { return nil }
@@ -1109,8 +1099,7 @@ final class Engine {
             guard let s = self.windows[id]?.size else { return nil }
             return self.stackTarget(id, size: s, pointer: mouse)
         }.first.flatMap { mi, target, below -> Rect? in
-            let m = monitors[mi]
-            guard let f = m.strip.frames(m.viewport).first(where: { $0.0 == target })?.1 else { return nil }
+            guard let f = frames(mi).first(where: { $0.0 == target })?.1 else { return nil }
             let half = f.h / 2
             return Rect(x: f.x, y: below ? f.y + half : f.y, w: f.w, h: half)
         }
@@ -1530,10 +1519,10 @@ final class Engine {
         // A move still queued for a slow app would otherwise land afterwards
         // and park the window again.
         flushMover()
-        for m in monitors {
-            let vp = m.viewport
+        for mi in monitors.indices {
+            let vp = monitors[mi].viewport
             var cascade = 0.0
-            for (id, frame) in m.strip.frames(vp) {
+            for (id, frame) in frames(mi) {
                 guard let win = windows[id], let a = anims[id] else { continue }
                 let (x, y) = (a.x.value, a.y.value)
                 if x < vp.x || x + frame.w > vp.x + vp.w || y + 1 > vp.y + vp.h {

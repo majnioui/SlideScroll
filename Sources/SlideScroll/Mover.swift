@@ -16,6 +16,8 @@ final class Mover {
     /// How often an app's queue asks it whether AXEnhancedUserInterface is on.
     /// Asking every frame would double the calls a slow app has to answer.
     private static let enhancedUICheck: TimeInterval = 1
+    /// How long an app gets to settle on a size other than the one asked for.
+    private static let settleDelay: DispatchTimeInterval = .milliseconds(150)
     /// In verbose mode, batches slower than this are logged.
     private static let slowBatch: TimeInterval = 0.012
 
@@ -66,8 +68,18 @@ final class Mover {
             let start = Date()
             for (win, w, h) in sizes {
                 win.setSize(w, h)
-                let got = win.size ?? CGSize(width: w, height: h)
-                Engine.shared?.send(.resized(win.id, want: CGSize(width: w, height: h), got: got))
+                let want = CGSize(width: w, height: h)
+                let got = win.size ?? want
+                if abs(got.width - w) <= 1 && abs(got.height - h) <= 1 {
+                    Engine.shared?.send(.resized(win.id, want: want, got: got))
+                } else {
+                    // Chrome and Electron apps resize a moment later, and until
+                    // then report the size they had: look again before taking
+                    // the answer as the size the app settled on.
+                    queue.asyncAfter(deadline: .now() + Mover.settleDelay) {
+                        Engine.shared?.send(.resized(win.id, want: want, got: win.size ?? want))
+                    }
+                }
             }
             for (win, x, y) in moves {
                 win.setPosition(x, y)

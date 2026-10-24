@@ -54,9 +54,6 @@ public struct Column<W: Equatable>: Equatable {
     public var active: Int
     /// Tabbed columns show one window at a time, each filling the column.
     public var tabbed: Bool
-    /// Made tabbed by `fitAsTabs`, not by the user: it goes back to a
-    /// plain column once it's down to one window.
-    public var autoTabbed: Bool
     public var width: Double
     /// Width to go back to when leaving full width.
     public var restoreWidth: Double?
@@ -71,7 +68,6 @@ public struct Column<W: Equatable>: Equatable {
         widths = [width]
         active = 0
         tabbed = false
-        autoTabbed = false
         self.width = width
         restoreWidth = nil
         height = nil
@@ -109,20 +105,6 @@ public struct Column<W: Equatable>: Equatable {
         height = nil
     }
 
-    /// Show the windows as tabs because they can't share the column's height.
-    public mutating func fitAsTabs() {
-        tabbed = true
-        autoTabbed = true
-    }
-
-    /// Tabs added by `fitAsTabs` aren't needed for a lone window.
-    mutating func dropAutoTabs() {
-        if autoTabbed && windows.count < 2 {
-            tabbed = false
-            autoTabbed = false
-        }
-    }
-
     @discardableResult
     mutating func removeRow(_ row: Int) -> W {
         weights.remove(at: row)
@@ -131,7 +113,6 @@ public struct Column<W: Equatable>: Equatable {
         if active >= row && active > 0 {
             active -= 1
         }
-        dropAutoTabs()
         return w
     }
 
@@ -146,7 +127,6 @@ public struct Column<W: Equatable>: Equatable {
         windows = zip(windows, flags).filter { $0.1 }.map { $0.0 }
         weights = zip(weights, flags).filter { $0.1 }.map { $0.0 }
         widths = zip(widths, flags).filter { $0.1 }.map { $0.0 }
-        dropAutoTabs()
         active = min(max(keptUpToActive - 1, 0), max(windows.count - 1, 0))
     }
 }
@@ -525,7 +505,6 @@ public struct Strip<W: Equatable> {
     public mutating func toggleTabbed() {
         withFocusedCol { col in
             col.tabbed.toggle()
-            col.autoTabbed = false
         }
     }
 
@@ -881,13 +860,19 @@ public struct Strip<W: Equatable> {
     /// off-screen columns parked against the viewport edges. Stacked windows
     /// split the column's height by weight; tabbed ones all fill it, below
     /// their tab bar.
-    public func frames(_ viewport: Rect) -> [(W, Rect)] {
+    ///
+    /// `minHeight` is the shortest each window's app will make it, where
+    /// known. A stack whose windows can't all fit at those heights overlaps
+    /// instead: each keeps its shortest height, the top one stays at the top,
+    /// the bottom one's bottom edge stays on screen, and the overlap is shared
+    /// between neighbours.
+    public func frames(_ viewport: Rect, minHeight: (W) -> Double = { _ in 0 }) -> [(W, Rect)] {
         let inner = inner(viewport)
         let right = inner.x + inner.w
         let top = viewport.y + gap
         var out: [(W, Rect)] = []
         if let c = pinned[LEFT] {
-            columnFrames(c, x: viewport.x + gap, top: top, viewport: viewport, into: &out)
+            columnFrames(c, x: viewport.x + gap, top: top, viewport: viewport, minHeight: minHeight, into: &out)
         }
         for (i, c) in columns.enumerated() {
             var x = inner.x + columnX(i) - scroll
@@ -903,16 +888,17 @@ public struct Strip<W: Equatable> {
                 x = viewport.x + peek - c.width
                 y = parkY[LEFT] ?? top
             }
-            columnFrames(c, x: x, top: y, viewport: viewport, into: &out)
+            columnFrames(c, x: x, top: y, viewport: viewport, minHeight: minHeight, into: &out)
         }
         if let c = pinned[RIGHT] {
-            columnFrames(c, x: viewport.x + viewport.w - gap - c.width, top: top, viewport: viewport, into: &out)
+            columnFrames(c, x: viewport.x + viewport.w - gap - c.width, top: top, viewport: viewport, minHeight: minHeight, into: &out)
         }
         return out
     }
 
     /// Frames for the windows of one column whose top edge is at `top`.
-    func columnFrames(_ c: Column<W>, x: Double, top: Double, viewport: Rect, into out: inout [(W, Rect)]) {
+    func columnFrames(_ c: Column<W>, x: Double, top: Double, viewport: Rect, minHeight: (W) -> Double,
+                      into out: inout [(W, Rect)]) {
         let fullH = viewport.h - 2 * gap
         if c.tabbed {
             for w in c.windows {
@@ -925,7 +911,21 @@ public struct Strip<W: Equatable> {
             out.append((c.windows[0], Rect(x: x, y: top, w: c.width, h: h)))
             return
         }
-        let usable = fullH - gap * Double(c.windows.count - 1)
+        let gaps = gap * Double(c.windows.count - 1)
+        let mins = c.windows.map(minHeight)
+        if mins.reduce(0, +) + gaps > fullH + 1 {
+            // Too tall to share the column: overlap, keeping every window on screen.
+            let heights = mins.map { Swift.max($0, SlideScrollCore.minHeight) }
+            let overlap = heights.reduce(0, +) + gaps - fullH
+            var natural = top
+            for (i, (w, h)) in zip(c.windows, heights).enumerated() {
+                let y = natural - overlap * Double(i) / Double(c.windows.count - 1)
+                out.append((w, Rect(x: x, y: y, w: c.width, h: h)))
+                natural += h + gap
+            }
+            return
+        }
+        let usable = fullH - gaps
         let total = c.weights.reduce(0, +)
         var y = top
         for (w, weight) in zip(c.windows, c.weights) {

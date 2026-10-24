@@ -17,7 +17,7 @@ let checks: [(String, () -> Void)] = [
     ("newWindowsOpenRightOfFocusAndClosedOnesLeave", newWindowsOpenRightOfFocusAndClosedOnesLeave),
     ("scrollsJustEnoughAndParksTheRest", scrollsJustEnoughAndParksTheRest),
     ("stackingPoppingAndOwnWidths", stackingPoppingAndOwnWidths),
-    ("tabsAddedToFitGoOnceOneWindowIsLeft", tabsAddedToFitGoOnceOneWindowIsLeft),
+    ("stacksTooTallToShareOverlapOnScreen", stacksTooTallToShareOverlapOnScreen),
     ("tabbedColumnsLeaveRoomForTheTabBar", tabbedColumnsLeaveRoomForTheTabBar),
     ("closingAStackedWindowKeepsTheRest", closingAStackedWindowKeepsTheRest),
     ("droppingOntoAWindowStacksIt", droppingOntoAWindowStacksIt),

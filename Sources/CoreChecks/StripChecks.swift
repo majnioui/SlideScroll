@@ -70,20 +70,21 @@ func stackingPoppingAndOwnWidths() {
     expect(!r3, "a lone window has nothing to pop out of")
 }
 
-func tabsAddedToFitGoOnceOneWindowIsLeft() {
-    var s = strip(3)
+func stacksTooTallToShareOverlapOnScreen() {
+    var s = strip(2)
     s.focused = 1
     s.stackInto(-1)
-    s.columns[0].fitAsTabs()
-    s.popOut(1)
-    expect(!s.columns[0].tabbed, "a lone window needs no tabs")
+    // Apps that won't go shorter than 620 and 375: 995 plus the gap won't fit in 780.
+    let mins: [UInt32: Double] = [0: 620, 1: 375]
+    let f = s.frames(vp) { mins[$0] ?? 0 }
+    expect(f[0].1 == Rect(x: 10, y: 10, w: 485, h: 620), "the top one keeps its height, at the top")
+    expect(f[1].1.h == 375, "so does the bottom one")
+    expect(f[1].1.y + f[1].1.h == 790, "with its bottom edge on screen")
+    expect(f[1].1.y < f[0].1.y + f[0].1.h, "overlapping the one above")
 
-    // Tabs the user asked for stay.
-    s.focused = 1
-    s.stackInto(-1)
-    s.toggleTabbed()
-    s.popOut(1)
-    expect(s.columns[0].tabbed)
+    // When their shortest heights do fit, they share the column as usual.
+    let g = s.frames(vp) { [0: 300, 1: 300][$0] ?? 0 }
+    expect(g[0].1.h == 385 && g[1].1.h == 385)
 }
 
 func tabbedColumnsLeaveRoomForTheTabBar() {
