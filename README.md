@@ -11,7 +11,6 @@ Your windows live on an endless horizontal strip. Opening one never squeezes the
 [![Release build](https://github.com/majnioui/SlideScroll/actions/workflows/release.yml/badge.svg)](https://github.com/majnioui/SlideScroll/actions/workflows/release.yml)
 [![macOS 13+](https://img.shields.io/badge/macOS-13%2B-black?logo=apple)](#requirements)
 [![Apple silicon](https://img.shields.io/badge/Apple%20silicon-M1%2B-black)](#requirements)
-[![Written in Swift](https://img.shields.io/badge/written%20in-Swift-F05138?logo=swift&logoColor=white)](https://www.swift.org)
 [![MIT license](https://img.shields.io/github/license/majnioui/SlideScroll?color=blue)](LICENSE)
 
 [**Download**](https://github.com/majnioui/SlideScroll/releases/latest) ·
@@ -38,8 +37,8 @@ you're using; nothing else changes size. Swipe with four fingers or press a
 shortcut to scroll the strip, the way [niri](https://github.com/YaLTeR/niri) and
 [PaperWM](https://github.com/paperwm/PaperWM) work on Linux.
 
-SlideScroll is free, open source, and native: written in Swift on AppKit and
-SwiftUI, with no Electron, no web views and no account. Its only network access is
+SlideScroll is free, open source, and a native Mac app, with no Electron, no web
+views and no account. Its only network access is
 checking GitHub for updates, which Settings can turn off.
 
 ## Features
