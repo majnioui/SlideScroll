@@ -70,6 +70,8 @@ private struct Anim {
     /// macOS gave it a smaller size than asked while it was still on its way
     /// to a new spot; ask again once it has landed.
     var resizeAgain = false
+    /// The shortest its app will make it, once it has refused to go shorter.
+    var minHeight = 0.0
 
     init(at p: CGPoint, size: CGSize) {
         x = Spring(p.x)
@@ -835,8 +837,13 @@ final class Engine {
         let overflowing = strip.allColumns.filter { c in
             guard !c.tabbed, c.windows.count > 1, !c.windows.contains(where: dragging.contains) else { return false }
             let col = c.windows.compactMap { anims[$0] }
+            let gaps = strip.gap * Double(c.windows.count - 1)
+            // The shortest each app has agreed to go already don't fit: no
+            // share of the height can work, so don't wait for more answers.
+            // Waiting would bounce the windows between their minimums forever.
+            if col.reduce(0, { $0 + $1.minHeight }) + gaps > fullH + 1 { return true }
             let heights = col.reduce(0) { $0 + $1.appliedSize.height }
-            return col.allSatisfy { $0.resizing == nil } && heights + strip.gap * Double(c.windows.count - 1) > fullH + 1
+            return col.allSatisfy { $0.resizing == nil } && heights + gaps > fullH + 1
         }.map { $0.windows[0] }
         for id in overflowing {
             Log.info("the windows stacked with \(id) are too tall to share a column; showing them as tabs")
@@ -886,6 +893,7 @@ final class Engine {
         // limit is what stopped it.
         let moving = abs(a.applied.x - a.x.target.rounded()) > 0.5 || abs(a.applied.y - a.y.target.rounded()) > 0.5
         a.resizeAgain = moving && (got.width < want.width - 1 || got.height < want.height - 1)
+        if got.height > want.height + 1 { a.minHeight = max(a.minHeight, got.height) }
         anims[id] = a
         guard !paused, !suspended, !dragging.contains(id), let mi = monitorOf(id), !monitors[mi].away else { return }
         let vp = monitors[mi].viewport
@@ -1084,6 +1092,13 @@ final class Engine {
         monitors[mi].strip.focus(id)
         Log.debug("window \(id) resized to \(Int(s.width))x\(Int(s.height))")
         return true
+    }
+
+    /// The pointer is on the window's title bar, where windows are dragged from.
+    private func grabbedByTitleBar(_ win: Window) -> Bool {
+        guard let p = win.position, let s = win.size else { return false }
+        let m = AX.mouseLocation
+        return m.x >= p.x && m.x < p.x + s.width && m.y >= p.y && m.y < p.y + min(titleBand, s.height)
     }
 
     /// While a window is dragged, highlight the half of the window it would
@@ -1285,9 +1300,12 @@ final class Engine {
             return
         case .windowDragged(let id):
             // While the mouse is down our own animation may still move other
-            // windows; the one the user grabbed is the one that has focus.
+            // windows; the one the user grabbed has the pointer on its title
+            // bar, or has focus. Grabbing a window that isn't focused moves it
+            // before macOS reports it as focused, so the pointer counts first.
             // Drag events still queued after the mouse was released don't count.
-            if windows[id] != nil && !dragging.contains(id) && AX.mouseDown && AX.focusedWindowID() == id {
+            if let win = windows[id], !dragging.contains(id), AX.mouseDown,
+               grabbedByTitleBar(win) || AX.focusedWindowID() == id {
                 dragging.insert(id)
             }
             if dragging.contains(id) { showDropHint() }

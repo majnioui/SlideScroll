@@ -31,10 +31,9 @@ enum Hotkeys {
             let flags = event.flags.rawValue
             let key = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
             let command = Keymap.current.command(for: flags, key: key)
-            if Log.verbose {
-                Log.info("key \(key) flags \(String(flags & Mod.all, radix: 16)) -> \(command.map { "\($0)" } ?? "nothing")")
-            }
             guard let command, let engine = Engine.shared else { return Unmanaged.passUnretained(event) }
+            // Only shortcuts are logged: anything else is the user typing.
+            Log.debug("shortcut \(Shortcut(mods: flags & Mod.all, key: key).configText) -> \(command)")
             engine.send(command)
             return nil // swallow the key press
         }
