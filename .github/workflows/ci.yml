@@ -1,0 +1,24 @@
+# Checks and builds every push to main and every pull request, on Apple
+# silicon like the app.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Core checks
+        run: swift run -c release core-checks
+
+      - name: Build the app
+        run: scripts/bundle.sh

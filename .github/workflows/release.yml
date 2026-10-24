@@ -1,0 +1,152 @@
+# Builds SlideScroll.app and publishes it as a GitHub release named
+# "SlideScroll <version>", with a disk image, a zip and their checksums.
+#
+# Release by pushing a tag that matches the version in VERSION:
+#   git tag v0.1.0 && git push origin v0.1.0
+# or run the workflow by hand, which tags the current commit.
+#
+# Signing is optional. Without these secrets the app is signed ad hoc, and
+# users allow Accessibility again after every update. With a self-signed
+# certificate from scripts/make-signing-cert.sh (the first three secrets) every
+# release has the same identity, so updates keep the permission. With a
+# Developer ID it is also notarized and stapled:
+#   MACOS_CERTIFICATE           base64 of the .p12 (self-signed or Developer ID)
+#   MACOS_CERTIFICATE_PASSWORD  its password
+#   MACOS_SIGN_IDENTITY         its name, e.g. "SlideScroll Self-Signed"
+#   APPLE_ID, APPLE_TEAM_ID, APPLE_APP_PASSWORD   for notarization
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    # Apple silicon, like the app.
+    runs-on: macos-15
+    env:
+      MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+      MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+      MACOS_SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read the version
+        id: version
+        run: |
+          version=$(cat VERSION)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+          if [ "$GITHUB_REF_TYPE" = "tag" ] && [ "$GITHUB_REF_NAME" != "v$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME doesn't match version $version in VERSION"
+            exit 1
+          fi
+
+      - name: Core checks
+        run: swift run -c release core-checks
+
+      - name: Set up signing
+        if: env.MACOS_CERTIFICATE != ''
+        run: |
+          keychain="$RUNNER_TEMP/signing.keychain-db"
+          password=$(uuidgen)
+          echo "$MACOS_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
+          security create-keychain -p "$password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$password" "$keychain"
+          security import "$RUNNER_TEMP/certificate.p12" -k "$keychain" \
+            -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -k "$password" "$keychain" >/dev/null
+          security list-keychains -d user -s "$keychain" $(security list-keychains -d user | tr -d '"')
+          rm "$RUNNER_TEMP/certificate.p12"
+          case "$MACOS_SIGN_IDENTITY" in
+            "Developer ID"*) ;;
+            *)
+              # A self-signed certificate (scripts/make-signing-cert.sh) has to
+              # be trusted for code signing before codesign will use it.
+              security find-certificate -c "$MACOS_SIGN_IDENTITY" -p "$keychain" > "$RUNNER_TEMP/certificate.pem"
+              sudo security add-trusted-cert -d -r trustRoot -p codeSign \
+                -k /Library/Keychains/System.keychain "$RUNNER_TEMP/certificate.pem"
+              rm "$RUNNER_TEMP/certificate.pem"
+              ;;
+          esac
+          echo "SIGN_IDENTITY=$MACOS_SIGN_IDENTITY" >> "$GITHUB_ENV"
+          if [ -n "$APPLE_ID" ]; then
+            xcrun notarytool store-credentials slidescroll --apple-id "$APPLE_ID" \
+              --team-id "$APPLE_TEAM_ID" --password "$APPLE_APP_PASSWORD" --keychain "$keychain"
+            echo "NOTARY_PROFILE=slidescroll" >> "$GITHUB_ENV"
+          fi
+
+      - name: Package
+        run: scripts/package.sh
+
+      - name: Write release notes
+        run: |
+          version=${{ steps.version.outputs.version }}
+          {
+            echo "## Install"
+            echo
+            echo "Paste this into Terminal to install or update:"
+            echo
+            echo '```sh'
+            echo 'curl -fsSL https://slidescroll.majnioui.me/install.sh | sh'
+            echo '```'
+            echo
+            echo "Or open \`SlideScroll-$version.dmg\` and drag SlideScroll into Applications."
+            echo "Requires macOS 13 or later on Apple silicon."
+            echo
+            if [ -z "${NOTARY_PROFILE:-}" ]; then
+              echo "This build isn't notarized yet, so the first time you open it macOS says it"
+              echo "\"could not verify\" SlideScroll. Click **Done**, then go to **System Settings →"
+              echo "Privacy & Security**, scroll down to *\"SlideScroll\" was blocked* and click"
+              echo "**Open Anyway**. Or run this once:"
+              echo
+              echo '```sh'
+              echo 'xattr -dr com.apple.quarantine /Applications/SlideScroll.app'
+              echo '```'
+              echo
+            fi
+            echo "On first launch, allow SlideScroll in **System Settings → Privacy & Security →"
+            echo "Accessibility**; it starts as soon as you do. It lives in the menu bar."
+            # This version's section of the changelog, without its heading.
+            changes=$(awk -v v="## $version" '$0 == v {on=1; next} /^## / {on=0} on' CHANGELOG.md)
+            if [ -n "$changes" ]; then
+              echo
+              echo "## What's new"
+              echo "$changes" | sed 's/^### /#### /'
+            fi
+          } > "$RUNNER_TEMP/notes.md"
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag=${{ steps.version.outputs.tag }}
+          files="build/dist/SlideScroll-${{ steps.version.outputs.version }}.dmg
+            build/dist/SlideScroll-${{ steps.version.outputs.version }}.zip
+            build/dist/SHA256SUMS"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            # Re-running the workflow replaces the files of the existing release.
+            gh release upload "$tag" $files --clobber
+          else
+            gh release create "$tag" $files \
+              --title "SlideScroll ${{ steps.version.outputs.version }}" \
+              --notes-file "$RUNNER_TEMP/notes.md" \
+              --generate-notes \
+              --target "$GITHUB_SHA"
+          fi
+
+      - name: Clean up signing
+        if: always() && env.MACOS_CERTIFICATE != ''
+        run: security delete-keychain "$RUNNER_TEMP/signing.keychain-db" || true

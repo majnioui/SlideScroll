@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SlideScroll, a scrolling window manager for macOS</title>
+<meta name="description" content="SlideScroll puts your Mac's windows on an endless horizontal strip: new windows slide in and nothing shrinks. Free and open source.">
+<link rel="icon" href="assets/icon-64.png" type="image/png">
+<link rel="apple-touch-icon" href="assets/icon-256.png">
+<meta property="og:title" content="SlideScroll">
+<meta property="og:description" content="A scrolling window manager for macOS. New windows slide in; nothing shrinks.">
+<meta property="og:image" content="https://slidescroll.majnioui.me/assets/icon-512.png">
+<meta name="theme-color" content="#ffffff">
+<link rel="stylesheet" href="styles.css?v=0.1.0">
+<script>document.documentElement.classList.add('js');</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="nav">
+  <div class="container nav__bar">
+    <a class="wordmark" href="#top" aria-label="SlideScroll home">
+      <img src="assets/icon-64.png" width="26" height="26" alt="">
+      <span>SlideScroll</span>
+    </a>
+    <nav class="nav__links" aria-label="Main">
+      <a href="#demo">How it works</a>
+      <a href="#video">Video</a>
+      <a href="#keys">Shortcuts</a>
+      <a href="https://github.com/majnioui/SlideScroll">GitHub</a>
+      <a class="btn btn--primary btn--small" href="#install">Download</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+
+  <section class="hero" id="top">
+    <div class="container">
+      <div class="hero__text">
+        <img class="hero__icon" src="assets/icon-256.png" width="84" height="84" alt="">
+        <h1>Your windows, on an endless strip.</h1>
+        <p class="lead">A window manager for macOS where new windows slide in beside you, and nothing ever gets squeezed.</p>
+        <div class="get">
+          <a class="btn btn--primary" href="https://github.com/majnioui/SlideScroll/releases/download/v0.1.0/SlideScroll-0.1.0.dmg" data-dmg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
+            Download for Mac
+          </a>
+          <a class="btn" href="https://github.com/majnioui/SlideScroll">View on GitHub</a>
+        </div>
+        <div class="command" data-command>
+          <code>curl -fsSL https://slidescroll.majnioui.me/install.sh | sh</code>
+          <button class="chip command__copy" type="button" data-copy aria-label="Copy the install command">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+            <span data-copy-label>Copy</span>
+          </button>
+        </div>
+        <p class="hero__meta">Free and open source. macOS 13 or later, on Apple silicon.</p>
+      </div>
+
+      <figure class="demo" id="demo" aria-labelledby="demo-note">
+        <div class="desk">
+        <div class="menubar" aria-hidden="true">
+          <span class="menubar__app" data-menu-app>Terminal</span><span>File</span><span>Edit</span><span>View</span><span>Window</span>
+          <span class="menubar__end"><img class="menubar__icon" src="assets/icon-64.png" width="15" height="15" alt=""><span>Thu 9:41</span></span>
+        </div>
+        <div class="demo__screen" data-strip tabindex="0" role="group" aria-roledescription="interactive demo" aria-label="A strip of windows wider than the screen: a pinned column, columns, a stack and a tabbed column. Use the left and right arrow keys to move focus, and R to cycle the width.">
+          <div class="win win--pinned" data-app="Messages" data-kind="pinned">
+            <div class="win__bar"><span class="lights"><i></i></span><p class="win__app">Messages</p></div>
+            <div class="win__body"><p class="win__title">Messages</p><p>Sam</p><p class="win__soft">See you at ten</p><p>Lee</p><p class="win__soft">Sent the file</p></div>
+          </div>
+          <div class="win" data-app="Terminal" data-kind="column">
+            <div class="win__bar"><span class="lights"><i></i></span><p class="win__app">Terminal</p></div>
+            <div class="win__body win__body--mono win__body--dark">
+              <p class="win__soft">~/code/slidescroll</p>
+              <p>$ swift build -c release</p>
+              <p class="win__soft">Compiling slidescroll</p>
+              <p class="win__ok">Finished release</p>
+            </div>
+          </div>
+          <div class="win" data-app="Editor" data-kind="column">
+            <div class="win__bar"><span class="lights"><i></i></span><p class="win__app">Editor</p></div>
+            <div class="win__body win__body--mono">
+              <p>fn focus_right(&amp;mut self)</p>
+              <p class="win__soft">self.focused += 1;</p>
+              <p class="win__soft">self.scroll_into_view();</p>
+            </div>
+          </div>
+          <div class="win" data-app="Safari" data-kind="column">
+            <div class="win__bar"><span class="lights"><i></i></span><p class="win__app">Safari</p></div>
+            <div class="win__body">
+              <p class="win__url">slidescroll.majnioui.me</p>
+              <p class="win__title">Your windows, on an endless strip.</p>
+              <p class="win__soft">Every window keeps the width you gave it.</p>
+            </div>
+          </div>
+          <div class="win win--stack" data-app="Notes" data-kind="stack">
+            <div class="win__half">
+              <div class="win__bar"><span class="lights"><i></i></span><p class="win__app">Notes</p></div>
+              <div class="win__body"><p>Groceries</p><p class="win__soft">Oranges, bread</p></div>
+            </div>
+            <div class="win__half">
+              <div class="win__bar"><span class="lights"><i></i></span><p class="win__app">Mail</p></div>
+              <div class="win__body"><p>Inbox</p><p class="win__soft">Example newsletter</p></div>
+            </div>
+          </div>
+          <div class="win win--tabs" data-app="Music" data-kind="tabs">
+            <div class="win__bar"><span class="lights"><i></i></span><span class="tabs" role="tablist" aria-label="Tabs in this column">
+              <button class="tab" type="button" role="tab" aria-selected="true" data-tab="0">Music</button><button class="tab" type="button" role="tab" aria-selected="false" data-tab="1">Calendar</button><button class="tab" type="button" role="tab" aria-selected="false" data-tab="2">Photos</button>
+            </span></div>
+            <div class="win__body" data-tab-panel="0"><p class="win__title">Example album</p><p class="win__soft">Track one, 3:41</p></div>
+            <div class="win__body" data-tab-panel="1" hidden><p class="win__title">Thursday</p><p class="win__soft">Example meeting at ten</p></div>
+            <div class="win__body" data-tab-panel="2" hidden><p class="win__title">Library</p><p class="win__soft">1,204 photos</p></div>
+          </div>
+        </div>
+        </div>
+        <figcaption class="demo__caption">
+          <div class="demo__bar">
+            <span class="parts" role="group" aria-label="Show a part of the strip">
+              <button class="chip part" type="button" data-part="pinned" aria-pressed="false">Pinned</button>
+              <button class="chip part" type="button" data-part="column" aria-pressed="true">Column</button>
+              <button class="chip part" type="button" data-part="stack" aria-pressed="false">Stack</button>
+              <button class="chip part" type="button" data-part="tabs" aria-pressed="false">Tabs</button>
+            </span>
+            <span class="demo__keys">
+              <button class="chip key" type="button" data-move="-1" aria-label="Focus the window on the left">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+              </button>
+              <button class="chip key" type="button" data-move="1" aria-label="Focus the window on the right">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+              </button>
+              <button class="chip key" type="button" data-cycle>Cycle width</button>
+            </span>
+          </div>
+          <p class="demo__note" id="demo-note" aria-live="polite">
+            <span data-note="pinned" hidden>A pinned column stays at the edge while the rest of the strip scrolls past it. <kbd>⌃⌥P</kbd></span>
+            <span data-note="column">Each column keeps the width you gave it. Columns past the edge wait there, a sliver showing. <kbd>⌃⌥H</kbd> <kbd>⌃⌥L</kbd> <kbd>⌃⌥R</kbd></span>
+            <span data-note="stack" hidden>Two windows share one column. Drag the edge between them to share the height. <kbd>⌃⌥[</kbd> <kbd>⌃⌥]</kbd></span>
+            <span data-note="tabs" hidden>A stack shown one window at a time, under a tab bar. Click a tab to switch. <kbd>⌃⌥⇧T</kbd></span>
+          </p>
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="section video" id="video" aria-labelledby="video-head">
+    <div class="container">
+      <div class="section__head">
+        <h2 id="video-head">See it on a real Mac.</h2>
+        <p class="lead">Safari, Ghostty, Sublime Text and Spotify on one strip, moved with the keyboard.</p>
+      </div>
+      <figure class="video__frame">
+        <a class="video__play" href="https://youtu.be/iG9rnbIasas" data-youtube="iG9rnbIasas" aria-label="Play the SlideScroll demo video">
+          <img src="assets/demo-video.webp" width="1600" height="1000" alt="" loading="lazy" decoding="async">
+          <span class="video__icon" aria-hidden="true"></span>
+        </a>
+      </figure>
+      <p class="video__note">34 seconds. Plays from YouTube once you press play.</p>
+    </div>
+  </section>
+
+  <section class="section section--mist settings" aria-labelledby="settings-head">
+    <div class="container">
+      <div class="section__head">
+        <h2 id="settings-head">Set up in one window.</h2>
+        <p class="lead">Shortcuts, startup, and a live check of the macOS settings that get in the way.</p>
+      </div>
+      <div class="switch" data-switch>
+        <div class="seg" role="tablist" aria-label="Settings tabs">
+          <button class="chip" role="tab" type="button" id="tab-general" aria-controls="panel-general" aria-selected="true">General</button>
+          <button class="chip" role="tab" type="button" id="tab-shortcuts" aria-controls="panel-shortcuts" aria-selected="false" tabindex="-1">Shortcuts</button>
+          <button class="chip" role="tab" type="button" id="tab-about" aria-controls="panel-about" aria-selected="false" tabindex="-1">About</button>
+        </div>
+        <div class="switch__panel" role="tabpanel" id="panel-general" aria-labelledby="tab-general">
+          <img class="shot" src="assets/settings-general.webp" width="1239" height="1279" loading="lazy" alt="SlideScroll Settings, General tab: launch at login, a setup check reading “Nothing in macOS is getting in SlideScroll’s way”, and verbose logging.">
+          <p class="switch__note">Launch at login, and a check that flags macOS settings that fight SlideScroll, with a button to fix each one.</p>
+        </div>
+        <div class="switch__panel" role="tabpanel" id="panel-shortcuts" aria-labelledby="tab-shortcuts" hidden>
+          <img class="shot" src="assets/settings-shortcuts.webp" width="1238" height="1279" loading="lazy" alt="SlideScroll Settings, Shortcuts tab: every action with two shortcut slots, shown in the keyboard’s own labels.">
+          <p class="switch__note">Every action takes two shortcuts, shown the way your own keyboard labels them. Click one and press new keys.</p>
+        </div>
+        <div class="switch__panel" role="tabpanel" id="panel-about" aria-labelledby="tab-about" hidden>
+          <img class="shot" src="assets/settings-about.webp" width="1238" height="1279" loading="lazy" alt="SlideScroll Settings, About tab: the app icon, version 0.2.0, made by majnioui.">
+          <p class="switch__note">The version you run, who made it, and the way back here.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section keys" id="keys" aria-labelledby="keys-head">
+    <div class="container">
+      <div class="section__head">
+        <h2 id="keys-head">Every move has a key.</h2>
+        <p class="lead">These are the defaults, and you can change any of them. Four-finger swipes scroll the strip too.</p>
+      </div>
+      <table class="keys__table">
+        <thead><tr><th scope="col">Action</th><th scope="col">Keys</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Focus left or right</th><td><kbd>⌃⌥H</kbd> <kbd>⌃⌥L</kbd></td></tr>
+          <tr><th scope="row">Move the column</th><td><kbd>⌃⌥⇧H</kbd> <kbd>⌃⌥⇧L</kbd></td></tr>
+          <tr><th scope="row">Cycle its width</th><td><kbd>⌃⌥R</kbd></td></tr>
+          <tr><th scope="row">Full width and back</th><td><kbd>⌃⌥F</kbd></td></tr>
+          <tr><th scope="row">Stack into a neighbour</th><td><kbd>⌃⌥[</kbd> <kbd>⌃⌥]</kbd></td></tr>
+          <tr><th scope="row">Pin to an edge</th><td><kbd>⌃⌥P</kbd></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section section--mist needs" aria-labelledby="needs-head">
+    <div class="container">
+      <div class="section__head">
+        <h2 id="needs-head">What it asks of your Mac.</h2>
+      </div>
+      <dl class="rows">
+        <div><dt>macOS 13 or later</dt><dd>Ventura, Sonoma, Sequoia and newer.</dd></div>
+        <div><dt>Apple silicon</dt><dd>Any Mac with an M-series chip.</dd></div>
+        <div><dt>Accessibility permission</dt><dd>macOS asks once, on first launch. It’s how windows get moved.</dd></div>
+        <div><dt>Nothing else</dt><dd>Free and MIT licensed. No account. The only network access is an update check, which you can turn off.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="section close" id="install" aria-labelledby="install-head">
+    <div class="container close__text">
+      <img class="close__icon" src="assets/icon-256.png" width="72" height="72" alt="">
+      <h2 id="install-head">Give your windows room.</h2>
+      <p class="lead">Download the disk image, or paste one line into Terminal.</p>
+      <div class="get">
+        <a class="btn btn--primary" href="https://github.com/majnioui/SlideScroll/releases/download/v0.1.0/SlideScroll-0.1.0.dmg" data-dmg>Download for Mac</a>
+      </div>
+      <div class="command" data-command>
+        <code>curl -fsSL https://slidescroll.majnioui.me/install.sh | sh</code>
+        <button class="chip command__copy" type="button" data-copy aria-label="Copy the install command">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+          <span data-copy-label>Copy</span>
+        </button>
+      </div>
+      <p class="close__note">The disk image isn’t notarized yet. If macOS won’t open it, go to System Settings, Privacy &amp; Security, and click Open Anyway.</p>
+      <p class="close__note">Prefer Homebrew? <code>brew tap majnioui/slidescroll https://github.com/majnioui/SlideScroll</code>, then <code>brew install slidescroll</code> builds it from source.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer__row">
+      <nav class="footer__links" aria-label="Project">
+        <a href="https://github.com/majnioui/SlideScroll">Source on GitHub</a>
+        <a href="https://github.com/majnioui/SlideScroll/releases">Releases</a>
+        <a href="https://github.com/majnioui/SlideScroll/blob/main/CHANGELOG.md">Changelog</a>
+        <a href="https://github.com/majnioui/SlideScroll/issues">Report a problem</a>
+        <a href="install.sh">install.sh</a>
+      </nav>
+      <p class="footer__legal">Made by <a href="https://majnioui.me">majnioui</a>. MIT License.</p>
+    </div>
+  </div>
+</footer>
+
+<script src="app.js?v=0.1.0" defer></script>
+<!-- 100% privacy-first analytics -->
+<script async src="https://scripts.simpleanalyticscdn.com/latest.js"></script>
+</body>
+</html>
