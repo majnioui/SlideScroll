@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.1
+
+### Fixed
+
+- Dragging a window that wasn't focused made it shake under the pointer, and
+  dropping it on another window didn't stack it: the drag only counted once
+  macOS reported the window as focused. A window grabbed by its title bar now
+  counts at once.
+- Two windows stacked in one column, whose apps both refuse to get shorter
+  (T3 Code and Chrome, say), bounced against each other forever. Once their
+  shortest heights can't share the column, they're shown as tabs right away.
+- Verbose logging recorded every key press. It now logs only shortcuts.
+
 ## 0.1.0
 
 A fresh start for SlideScroll. It does everything the earlier releases did, with
