@@ -22,9 +22,9 @@ Your windows live on an endless horizontal strip. Opening one never squeezes the
 
 <br>
 
-<a href="https://youtu.be/iG9rnbIasas"><img src="assets/demo-video.jpg" width="720" alt="SlideScroll demo video: Safari, Spotify and other windows on one strip, moved with the keyboard"></a>
+<a href="https://youtu.be/o-sgR5RTtwk"><img src="assets/demo-video.jpg" width="720" alt="SlideScroll demo video: Safari, Spotify, Sublime Text and Ghostty on one strip, moved with the keyboard"></a>
 
-<sub><a href="https://youtu.be/iG9rnbIasas">▶ Watch the demo on YouTube</a> (34 seconds)</sub>
+<sub><a href="https://youtu.be/o-sgR5RTtwk">▶ Watch the demo on YouTube</a> (40 seconds)</sub>
 
 </div>
 
