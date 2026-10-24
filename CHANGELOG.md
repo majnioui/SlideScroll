@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.2
+
+### Changed
+
+- Two windows stacked in one column whose apps won't get short enough to share
+  it (T3 Code and Chrome, say) now overlap instead of turning into tabs. Each
+  keeps the shortest height its app allows, the bottom one stays fully on
+  screen, and the one you focus comes to the front.
+
+### Fixed
+
+- Chrome and Electron apps report their old size for a moment after a resize,
+  which could be taken for the shortest they'd go. SlideScroll now looks again
+  before believing a size it didn't ask for.
+
 ## 0.1.1
 
 ### Fixed
