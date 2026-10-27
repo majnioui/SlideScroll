@@ -11,7 +11,7 @@ build step: deploy this folder as it is to any static host.
 - `assets/`: the app icon, three Settings screenshots, a demo GIF of the
   strip in use, and the poster for the demo video. The page sets its
   type in the system font (SF Pro on a Mac), so it loads no web fonts. It
-  loads Simple Analytics' cookieless script and asks GitHub's API for the
+  loads a self-hosted Umami script (cookieless) and asks GitHub's API for the
   latest release. The demo video comes from YouTube (its no-cookie domain)
   only once a visitor presses play.
 - `CNAME`: the custom domain, for GitHub Pages. Other hosts ignore it.
