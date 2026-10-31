@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- A strip indicator: while you move with a shortcut or a swipe, the strip's
+  columns show as app icons at the bottom of the screen for a moment, the
+  focused one highlighted. Click one to jump to it. Turn it off in Settings →
+  Windows.
+- An outline around the focused window, in your accent colour. Turn it on in
+  Settings → Windows.
+- Undo and redo for the layout: `⌃⌥Z` puts back the last change made by a
+  shortcut or a drag (moving, stacking, widths, heights, pins, tabs), `⌃⌥⇧Z`
+  redoes it. Windows opened since stay; ones closed since stay closed.
+- `⌃⌥⇥` jumps back to the window you were in before this one.
+- The menu bar menu lists the strip's windows in order, with the focused one
+  ticked. Pick one to jump to it.
+
 ## 0.2.0
 
 ### Added

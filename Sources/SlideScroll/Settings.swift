@@ -208,6 +208,9 @@ private struct WindowsTab: View {
                 Picker("Space between windows", selection: Binding(get: { model.prefs.gap }, set: { g in model.changePrefs { $0.gap = g } })) {
                     ForEach(gaps, id: \.self) { g in Text(g == 0 ? "None" : "\(g.formatted()) pt").tag(g) }
                 }
+                Toggle("Outline the focused window", isOn: Binding(get: { model.prefs.focusBorder }, set: { on in model.changePrefs { $0.focusBorder = on } }))
+                Toggle("Show the strip while moving along it", isOn: Binding(get: { model.prefs.stripIndicator }, set: { on in model.changePrefs { $0.stripIndicator = on } }))
+                Note("App icons appear at the bottom of the screen for a moment, one per column. Click one to jump to it.")
             }
             Section("Always Float") {
                 Note("Windows of these apps stay where you put them, outside the strip. To float a single window, use ⌃⌥T.")

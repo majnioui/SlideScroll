@@ -54,6 +54,12 @@ checking GitHub for updates, which Settings can turn off.
 - **Tabs.** Turn a stack into a tabbed column with a clickable tab bar. Native macOS
   tabs (Finder, Terminal, Ghostty, …) stay in their column too.
 - **Pinning.** Keep a column at the left or right edge while the rest scrolls past.
+- **Always know where you are.** While you move, a row of app icons shows every
+  column, with yours highlighted; click one to jump there. The menu bar menu
+  lists every window too, and an optional outline marks the focused one.
+- **Undo.** `⌃⌥Z` puts back the last layout change, whether a shortcut or a
+  drag did it, and `⌃⌥⇧Z` redoes it. `⌃⌥⇥` jumps back to the window you were
+  just in.
 - **Multiple displays.** Each display has its own strip. Send windows between
   displays with a shortcut or by dragging, and nothing spills onto the
   neighbouring screen.
@@ -62,6 +68,10 @@ checking GitHub for updates, which Settings can turn off.
   going, and remembers your layout across restarts.
 - **Every shortcut is yours.** Remap any action in Settings, with two shortcuts per
   action. Works on any keyboard layout.
+- **Scriptable.** Every action has a `slidescroll://` URL and a command-line name,
+  for Raycast, Alfred, Shortcuts and scripts. See [Scripting](#scripting).
+- **Widths per app.** New windows of an app can open at their own width, say a
+  third for the terminal and two thirds for the browser.
 - **Safe.** Quitting, pausing or even a crash puts every window back on screen.
 - **Tells you what's wrong.** Settings → General checks for macOS settings that
   get in the way, live, and one click opens the right System Settings pane.
@@ -201,6 +211,7 @@ typing accented characters. Every one can be changed: see [Customising](#customi
 | Focus up / down in a stack | `⌃⌥K` `⌃⌥J` or `⌃⌥↑` `⌃⌥↓` |
 | Focus first / last window | `⌃⌥⌘←` / `⌃⌥⌘→` |
 | Jump to window 1–9 | `⌃⌥1` … `⌃⌥9` |
+| Jump back to the previous window | `⌃⌥⇥` |
 | Focus next display | `⌃⌥N` |
 | Move column left / right | `⌃⌥⇧H` `⌃⌥⇧L` or `⌃⌥⇧←` `⌃⌥⇧→` |
 | Move window up / down in a stack | `⌃⌥⇧K` `⌃⌥⇧J` or `⌃⌥⇧↑` `⌃⌥⇧↓` |
@@ -216,6 +227,7 @@ typing accented characters. Every one can be changed: see [Customising](#customi
 | Stack into left / right column | `⌃⌥[` / `⌃⌥]` |
 | Pop out of stack to the left / right | `⌃⌥⇧[` / `⌃⌥⇧]` |
 | Tabbed column on / off | `⌃⌥⇧T` |
+| Undo / redo a layout change | `⌃⌥Z` / `⌃⌥⇧Z` |
 | Quit (puts every window back on screen) | `⌃⌥Q` |
 | Scroll the strip | four-finger swipe ← → |
 
@@ -253,6 +265,8 @@ natural = false   # reverse the direction
 
 [layout]
 gap = 12.0        # points between windows, 0 to 32
+focus_border = true   # outline the focused window
+show_strip = false    # don't show app icons while moving along the strip
 
 [apps]
 float = ["Calculator", "System Settings"]
@@ -459,6 +473,12 @@ Done:
 - [x] Animation timed to the display's refresh, with resizes that never stall it
 - [x] URL scheme and command line for every action
 - [x] Per-app opening widths
+- [x] A lone window keeps the height you drag it to
+- [x] Strip indicator: app icons while navigating, click to jump
+- [x] Focus border
+- [x] Undo the last layout change
+- [x] Jump back to the previously focused window
+- [x] Windows of the strip in the menu bar menu, click to jump
 
 Planned:
 
@@ -466,17 +486,19 @@ Planned:
 - [ ] One strip per Space; carry a window to another Space
 - [ ] Leave chosen displays (presentation, portrait) unmanaged
 - [ ] Overview: zoom out to the whole strip, click a window to jump to it
-- [ ] Strip indicator: app icons while navigating, click to jump, drag to reorder
-- [ ] Focus border, dim unfocused windows
+- [ ] Drag icons in the strip indicator to reorder columns
+- [ ] Dim unfocused windows
 - [ ] Centre modes (never / on overflow / always), focus follows mouse, mouse
       follows focus
 - [ ] Preset heights in a stack (⅓ / ½ / ⅔), expand a column to fill the empty
       space beside it
 - [ ] Scratch layer: one key shows or hides all floating windows
 - [ ] Per-app rules: open in a fixed slot or pinned
-- [ ] Keep a window's own height instead of filling the column
+- [ ] Open a window at its own height instead of filling the column
 - [ ] Guided first run
 - [ ] Raycast extension
+- [ ] Scroll the strip with a mouse wheel while holding a modifier
+- [ ] Named layouts: save a strip and bring it back later
 
 ## Contributing
 

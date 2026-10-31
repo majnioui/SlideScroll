@@ -20,6 +20,10 @@ enum Command {
     /// Take the focused window out of its stack into a new column.
     case popLeft, popRight
     case taller, shorter, equalizeHeights, toggleTabbed
+    /// Put the layout back the way it was before the last change, or redo it.
+    case undo, redo
+    /// Focus the window that had focus before this one.
+    case focusPrevious
     /// Pin the focused column to the left / right edge, or unpin it.
     case pinLeft, pinRight
     /// Focus the strip on the next display.

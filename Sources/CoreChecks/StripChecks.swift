@@ -245,3 +245,46 @@ func mergingRestoresSavedStacks() {
     expect(s.columns[1].widths == [485, 200])
     expect(s.focused == 1)
 }
+
+func undoPutsTheLayoutBack() {
+    var s = strip(3)
+    s.focused = 1
+    let before = s.arrangement
+    s.stackInto(-1)
+    s.cycleWidth(vp.w)
+    expect(cols(s) == [[0, 1], [2]])
+    expect(!s.arrangement.sameLayout(before))
+    s.restore(before, exists: { _ in true }, isNew: { _ in false })
+    expect(cols(s) == [[0], [1], [2]])
+    expect(s.columns.map(\.width) == [485, 485, 485])
+    expect(s.focusedWindow == 1, "focus goes back too")
+
+    // Moving focus alone isn't a layout change.
+    s.focusLeft()
+    expect(s.arrangement.sameLayout(before))
+
+    // Pins come back, and come off.
+    var p = strip(2)
+    let unpinned = p.arrangement
+    p.togglePin(LEFT)
+    let pinned = p.arrangement
+    p.restore(unpinned, exists: { _ in true }, isNew: { _ in false })
+    expect(p.pinned[LEFT] == nil && cols(p).count == 2)
+    p.restore(pinned, exists: { _ in true }, isNew: { _ in false })
+    expect(p.pinned[LEFT] != nil && cols(p).count == 1)
+}
+
+func undoKeepsNewWindowsAndForgetsClosedOnes() {
+    var s = strip(3)
+    s.focused = 0
+    let before = s.arrangement
+    s.moveRight()
+    expect(cols(s) == [[1], [0], [2]])
+    // Since then, window 2 closed and window 9 opened next to 0.
+    s.sync([0, 1, 9], newWidth: 300)
+    expect(cols(s) == [[1], [0], [9]])
+    s.restore(before, exists: { $0 != 2 }, isNew: { $0 == 9 })
+    expect(cols(s) == [[0], [9], [1]], "the new window stays, right of focus")
+    expect(s.columns[1].width == 300, "at its own width")
+    expect(s.focusedWindow == 0)
+}

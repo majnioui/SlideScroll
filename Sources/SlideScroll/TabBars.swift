@@ -60,14 +60,14 @@ enum TabBars {
     }
 
     /// AppKit's bottom-left-origin frame for an Accessibility (top-left-origin) rect.
-    private static func appKitFrame(_ r: Rect) -> NSRect? {
+    static func appKitFrame(_ r: Rect) -> NSRect? {
         guard let primaryH = NSScreen.screens.first?.frame.height else { return nil }
         return NSRect(x: r.x, y: primaryH - r.y - r.h, width: r.w, height: r.h)
     }
 
     /// A borderless, transparent, non-activating panel: clicking it must not
     /// take focus away from the window the user is working in.
-    private static func makePanel(_ rect: NSRect) -> NSPanel {
+    static func makePanel(_ rect: NSRect) -> NSPanel {
         let panel = NSPanel(contentRect: rect, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         panel.isReleasedWhenClosed = false
         panel.isOpaque = false
@@ -81,7 +81,7 @@ enum TabBars {
 
     /// Frosted glass like a menu's, rounded. It always looks active: this app
     /// never is, and inactive glass would look grey.
-    private static func makeGlass(_ size: NSSize, material: NSVisualEffectView.Material) -> NSVisualEffectView {
+    static func makeGlass(_ size: NSSize, material: NSVisualEffectView.Material) -> NSVisualEffectView {
         let glass = NSVisualEffectView(frame: NSRect(origin: .zero, size: size))
         glass.material = material
         glass.blendingMode = .behindWindow

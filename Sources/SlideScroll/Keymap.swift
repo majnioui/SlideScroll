@@ -122,6 +122,7 @@ let actions: [Action] = {
         a("focus_last", "Focus last window", "Focus", ["ctrl+alt+cmd+right"], .focusLast),
         a("focus_up", "Focus up in a stack", "Focus", ["ctrl+alt+k", "ctrl+alt+up"], .focusUp),
         a("focus_down", "Focus down in a stack", "Focus", ["ctrl+alt+j", "ctrl+alt+down"], .focusDown),
+        a("focus_previous", "Jump back to previous window", "Focus", ["ctrl+alt+tab"], .focusPrevious),
     ]
     for i in 1...9 {
         list.append(a("focus_window_\(i)", "Jump to window \(i)", "Focus", ["ctrl+alt+\(i)"], .focusIndex(i - 1)))
@@ -149,6 +150,8 @@ let actions: [Action] = {
         a("pop_left", "Pop out to the left", "Stacks and tabs", ["ctrl+alt+shift+["], .popLeft),
         a("pop_right", "Pop out to the right", "Stacks and tabs", ["ctrl+alt+shift+]"], .popRight),
         a("toggle_tabbed", "Tabbed column", "Stacks and tabs", ["ctrl+alt+shift+t"], .toggleTabbed),
+        a("undo", "Undo layout change", "Undo", ["ctrl+alt+z"], .undo),
+        a("redo", "Redo layout change", "Undo", ["ctrl+alt+shift+z"], .redo),
         a("quit", "Quit SlideScroll", "App", ["ctrl+alt+q"], .quit),
     ]
     return list

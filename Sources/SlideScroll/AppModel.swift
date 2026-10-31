@@ -4,6 +4,20 @@ import ServiceManagement
 
 /// What the menu and the Settings window show. Main thread only; SwiftUI
 /// redraws whatever reads a property when it changes.
+/// One window on a strip, as the menu lists it.
+struct StripWindow: Equatable {
+    let id: CGWindowID
+    let pid: pid_t
+    let app: String
+    let title: String
+    /// Index of its display, in the engine's order.
+    let display: Int
+    /// Below another window in a stack.
+    let stacked: Bool
+    let pinned: Bool
+    let focused: Bool
+}
+
 final class AppModel: ObservableObject {
     static let shared = AppModel()
 
@@ -30,6 +44,8 @@ final class AppModel: ObservableObject {
     }
     @Published var verbose = Log.verbose { didSet { Log.verbose = verbose } }
     @Published var launchAtLogin = false
+    /// The windows on the strips, left to right, display by display.
+    var stripWindows: [StripWindow] = []
 
     var statusText: String {
         switch status {

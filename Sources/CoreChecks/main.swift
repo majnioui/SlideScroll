@@ -30,6 +30,8 @@ let checks: [(String, () -> Void)] = [
     ("widthsFitBetweenPinnedColumns", widthsFitBetweenPinnedColumns),
     ("swipesStayInBoundsAndSnap", swipesStayInBoundsAndSnap),
     ("mergingRestoresSavedStacks", mergingRestoresSavedStacks),
+    ("undoPutsTheLayoutBack", undoPutsTheLayoutBack),
+    ("undoKeepsNewWindowsAndForgetsClosedOnes", undoKeepsNewWindowsAndForgetsClosedOnes),
     ("layoutSpringIsGentle", layoutSpringIsGentle),
     ("followSpringIsTightAndSurvivesLateFrames", followSpringIsTightAndSurvivesLateFrames),
 ]

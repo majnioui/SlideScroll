@@ -19,6 +19,11 @@ struct Prefs: Equatable {
     var natural = true
     /// Space between windows and around the strip, in points.
     var gap = 8.0
+    /// An accent-coloured outline around the focused window.
+    var focusBorder = false
+    /// App icons along the bottom of the screen for a moment while moving
+    /// along the strip.
+    var stripIndicator = true
     /// Apps, by name, whose windows never join the strip.
     var floatApps: [String] = []
     /// Apps, by name, whose new windows open at this fraction of the screen
@@ -44,6 +49,8 @@ struct Prefs: Equatable {
         if let n = get("swipe", "fingers", { if case .number(let n) = $0 { n } else { nil } }) { p.fingers = Int(n) }
         if let b = get("swipe", "natural", { if case .bool(let b) = $0 { b } else { nil } }) { p.natural = b }
         if let n = get("layout", "gap", { if case .number(let n) = $0 { n } else { nil } }) { p.gap = n }
+        if let b = get("layout", "focus_border", { if case .bool(let b) = $0 { b } else { nil } }) { p.focusBorder = b }
+        if let b = get("layout", "show_strip", { if case .bool(let b) = $0 { b } else { nil } }) { p.stripIndicator = b }
         if let l = get("apps", "float", { if case .strings(let l) = $0 { l } else { nil } }) { p.floatApps = l }
         for (app, v) in tables["apps.width"] ?? [:] {
             if let f = Prefs.widthFraction(v) {
@@ -86,8 +93,8 @@ struct Prefs: Equatable {
         if fingers != d.fingers || natural != d.natural {
             out += "\n[swipe]\nfingers = \(fingers)\nnatural = \(natural)\n"
         }
-        if gap != d.gap {
-            out += "\n[layout]\ngap = \(gap)\n"
+        if gap != d.gap || focusBorder != d.focusBorder || stripIndicator != d.stripIndicator {
+            out += "\n[layout]\ngap = \(gap)\nfocus_border = \(focusBorder)\nshow_strip = \(stripIndicator)\n"
         }
         if floatApps != d.floatApps {
             out += "\n[apps]\nfloat = [\(floatApps.map(Config.quote).joined(separator: ", "))]\n"
@@ -125,6 +132,8 @@ struct Prefs: Equatable {
         current = new
         if new.gap != old.gap { Engine.shared?.send(.setGap(new.gap)) }
         if new.floatApps != old.floatApps { Engine.shared?.send(.setFloatApps(new.floatApps)) }
+        // The engine shows or hides the border after its next event; give it one.
+        if new.focusBorder != old.focusBorder { Engine.shared?.send(.windowsChanged) }
         Config.save(keymap: Keymap.current, prefs: new)
     }
 }

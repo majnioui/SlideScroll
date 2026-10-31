@@ -81,10 +81,51 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         case .running: menu.addItem(item(model.paused ? "Resume" : "Pause", #selector(togglePause)))
         case .failed: break
         }
+        if model.status == .running && !model.paused { addWindows(to: menu) }
         menu.addItem(.separator())
         menu.addItem(item("Settings…", #selector(openSettings), ","))
         menu.addItem(.separator())
         menu.addItem(item("Quit SlideScroll", #selector(quit), "q"))
+    }
+
+    /// The strips' windows, left to right; picking one jumps to it.
+    private func addWindows(to menu: NSMenu) {
+        let list = model.stripWindows
+        guard !list.isEmpty else { return }
+        menu.addItem(.separator())
+        let displays = Set(list.map(\.display)).count
+        var shownDisplay: Int?
+        for w in list {
+            if displays > 1 && w.display != shownDisplay {
+                shownDisplay = w.display
+                let header = NSMenuItem(title: "Display \(w.display + 1)", action: nil, keyEquivalent: "")
+                header.isEnabled = false
+                menu.addItem(header)
+            }
+            let name = w.title.isEmpty || w.title == w.app ? w.app : "\(w.app) — \(w.title)"
+            let item = NSMenuItem(title: name.count > 60 ? name.prefix(59) + "…" : name, action: #selector(jumpToWindow), keyEquivalent: "")
+            item.target = self
+            item.tag = Int(w.id)
+            item.state = w.focused ? .on : .off
+            item.indentationLevel = w.stacked ? 1 : 0
+            item.image = icon(w.pid)
+            if w.pinned { item.toolTip = "Pinned" }
+            menu.addItem(item)
+        }
+    }
+
+    private var icons: [pid_t: NSImage] = [:]
+
+    private func icon(_ pid: pid_t) -> NSImage? {
+        if let icon = icons[pid] { return icon }
+        guard let image = NSRunningApplication(processIdentifier: pid)?.icon?.copy() as? NSImage else { return nil }
+        image.size = NSSize(width: 16, height: 16)
+        icons[pid] = image
+        return image
+    }
+
+    @objc private func jumpToWindow(_ sender: NSMenuItem) {
+        Engine.shared?.send(.focusWindow(CGWindowID(sender.tag)))
     }
 
     @objc private func togglePause() { setPaused(!model.paused) }

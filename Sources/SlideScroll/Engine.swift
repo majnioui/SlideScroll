@@ -231,12 +231,23 @@ final class Engine {
     private var reduceMotion = false
     /// App name per window, looked up once.
     private var appNames: [WID: String] = [:]
-    /// Titles of windows in tabbed columns, refreshed on every rescan.
+    /// Window titles, for tab bars and the menu, refreshed on every rescan.
     private var titles: [WID: String] = [:]
     /// Order and widths as of the last save, to know when to save again.
     private var savedSignature: [SignatureEntry] = []
     /// The tab bars last handed to the UI.
     private var shownBars: [TabBar] = []
+    /// The focus border last handed to the UI.
+    private var shownBorder: Overlays.Border?
+    /// The strip's windows last handed to the menu.
+    private var shownWindows: [StripWindow] = []
+    /// Every strip's arrangement before each layout change, newest last,
+    /// and the ones undone since, to redo.
+    private var undoHistory: [[UInt32: Arrangement<WID>]] = []
+    private var redoHistory: [[UInt32: Arrangement<WID>]] = []
+    /// The focused window as of the last event, and the one before it.
+    private var lastFocus: WID?
+    private var previousFocus: WID?
     /// The first scan has happened: windows found from now on are new.
     private var scanned = false
     /// The drop highlight last handed to the UI.
@@ -389,6 +400,9 @@ final class Engine {
             lastFrame = now()
         }
         publishTabBars()
+        trackFocus()
+        publishWindows()
+        publishFocusBorder()
 
         let animating = isAnimating
         let wantClock = animating && FrameClock.available ? animatedDisplay : nil
@@ -453,6 +467,11 @@ final class Engine {
         guard !displays.isEmpty else { return }
         let activeID = monitors[active].display.id
         var old = monitors
+        // What undo would put back may be on a display that's gone.
+        if Set(displays.map(\.id)) != Set(old.map(\.display.id)) {
+            undoHistory = []
+            redoHistory = []
+        }
         monitors = displays.map { d in
             if let i = old.firstIndex(where: { $0.display.id == d.id }) {
                 var m = old.remove(at: i)
@@ -702,9 +721,9 @@ final class Engine {
 
     /// Look up the titles shown in tab bars.
     private func refreshTitles() {
-        let tabbed = Set(monitors.flatMap { $0.strip.allColumns.filter(\.tabbed).flatMap(\.windows) })
-        titles = titles.filter { tabbed.contains($0.key) }
-        for id in tabbed {
+        let ids = Set(monitors.flatMap(\.windowIDs))
+        titles = titles.filter { ids.contains($0.key) }
+        for id in ids {
             if let title = windows[id]?.title { titles[id] = title }
         }
     }
@@ -1169,6 +1188,8 @@ final class Engine {
         if releasedAt == nil { releaseDrags() }
         releasedAt = nil
         // A window grabbed since the mouse let go is still being dragged.
+        let before = arrangements
+        defer { rememberForUndo(before) }
         let drops = released
         released = [:]
         for (id, r) in drops {
@@ -1270,6 +1291,7 @@ final class Engine {
                 swipeChecked = now()
             }
             if swipeOK == true {
+                showStripIndicator(swipeMonitor)
                 // If macOS also acts on this swipe it switches Space
                 // mid-gesture; stop and undo rather than keep moving
                 // windows during the transition. Checked by time, not on
@@ -1342,8 +1364,12 @@ final class Engine {
         }
         if case .quit = command {} else if !onScreen(active) { return }
         syncFocus()
+        let before = arrangements
         let focusChanged: Bool
         switch command {
+        case .undo: focusChanged = undo()
+        case .redo: focusChanged = redo()
+        case .focusPrevious: focusChanged = focusPrevious()
         case .toggleFloat:
             toggleFloat()
             focusChanged = false
@@ -1357,7 +1383,12 @@ final class Engine {
             exit(0)
         default: focusChanged = stripCommand(command)
         }
+        switch command {
+        case .undo, .redo: break
+        default: rememberForUndo(before)
+        }
         retarget()
+        showStripIndicator()
         if focusChanged {
             focusCurrent()
         } else {
@@ -1438,6 +1469,121 @@ final class Engine {
         monitors[to].strip.focus(id)
         active = to
         return true
+    }
+
+    // MARK: - Undo
+
+    /// Layout changes remembered for undo.
+    private static let undoLimit = 50
+
+    private var arrangements: [UInt32: Arrangement<WID>] {
+        Dictionary(monitors.map { ($0.display.id, $0.strip.arrangement) }, uniquingKeysWith: { a, _ in a })
+    }
+
+    /// Remember `before` for undo if the layout has changed since.
+    private func rememberForUndo(_ before: [UInt32: Arrangement<WID>]) {
+        let now = arrangements
+        guard now.contains(where: { id, a in before[id].map { !$0.sameLayout(a) } ?? false }) else { return }
+        undoHistory.append(before)
+        if undoHistory.count > Engine.undoLimit { undoHistory.removeFirst() }
+        redoHistory = []
+    }
+
+    private func undo() -> Bool {
+        guard let to = undoHistory.popLast() else { return false }
+        redoHistory.append(arrangements)
+        Log.debug("undo")
+        return arrange(to)
+    }
+
+    private func redo() -> Bool {
+        guard let to = redoHistory.popLast() else { return false }
+        undoHistory.append(arrangements)
+        Log.debug("redo")
+        return arrange(to)
+    }
+
+    /// Put every strip back as `to` has it. Windows that closed or floated
+    /// since are left out; windows opened since stay where they are.
+    private func arrange(_ to: [UInt32: Arrangement<WID>]) -> Bool {
+        let known = Set(to.values.flatMap(\.windows))
+        let inStrip = { [self] (id: WID) in
+            windows[id] != nil && !floating.contains(id) && !floatApps.contains(appNames[id] ?? "")
+        }
+        for mi in monitors.indices {
+            guard let a = to[monitors[mi].display.id] else { continue }
+            monitors[mi].strip.restore(a, exists: inStrip, isNew: { !known.contains($0) })
+            monitors[mi].clampWidths()
+        }
+        refreshTitles()
+        return true
+    }
+
+    // MARK: - Jumping back
+
+    /// Note when focus moves to another window, to jump back to the one before.
+    private func trackFocus() {
+        guard monitors.indices.contains(active) else { return }
+        let now = monitors[active].strip.focusedWindow
+        guard now != lastFocus else { return }
+        if let last = lastFocus, windows[last] != nil { previousFocus = last }
+        lastFocus = now
+    }
+
+    private func focusPrevious() -> Bool {
+        guard let id = previousFocus, windows[id] != nil, let mi = monitorOf(id), !monitors[mi].away else { return false }
+        active = mi
+        return monitors[mi].strip.focus(id)
+    }
+
+    // MARK: - Overlays
+
+    /// Outline the focused window as it moves, if Settings asks for it.
+    private func publishFocusBorder() {
+        var border: Overlays.Border?
+        if Prefs.current.focusBorder && !paused && !suspended && monitors.indices.contains(active) && !monitors[active].away,
+           let id = monitors[active].strip.focusedWindow, !dragging.contains(id), let a = anims[id] {
+            let s = a.resizing ?? a.appliedSize
+            border = Overlays.Border(window: id, frame: Rect(x: a.x.value, y: a.y.value, w: s.width, h: s.height))
+        }
+        guard border != shownBorder else { return }
+        shownBorder = border
+        Overlays.showBorder(border)
+    }
+
+    /// Show the strip's columns for a moment, after a shortcut or during a swipe.
+    private func showStripIndicator(_ mi: Int? = nil) {
+        let mi = mi ?? active
+        guard Prefs.current.stripIndicator, monitors.indices.contains(mi), !monitors[mi].away else { return }
+        let m = monitors[mi]
+        let focused = mi == active ? m.strip.focusedWindow : nil
+        let columns = m.strip.allColumns.compactMap { col -> Overlays.Column? in
+            guard let w = windows[col.activeWindow] else { return nil }
+            return Overlays.Column(window: w.id, pid: w.pid, focused: focused.map(col.windows.contains) ?? false)
+        }
+        Overlays.showStrip(Overlays.Strip(columns: columns, viewport: m.viewport))
+    }
+
+    // MARK: - The menu's window list
+
+    /// Hand the strips' windows to the menu when they change.
+    private func publishWindows() {
+        var list: [StripWindow] = []
+        for (mi, m) in monitors.enumerated() {
+            let focused = mi == active ? m.strip.focusedWindow : nil
+            let pins = Set((m.strip.pinned.compactMap { $0 }).flatMap(\.windows))
+            for col in m.strip.allColumns {
+                for (row, id) in col.windows.enumerated() {
+                    guard let w = windows[id] else { continue }
+                    list.append(StripWindow(id: id, pid: w.pid, app: appNames[id] ?? "", title: titles[id] ?? "",
+                                            display: mi, stacked: row > 0, pinned: pins.contains(id), focused: id == focused))
+                }
+            }
+        }
+        if paused { list = [] }
+        guard list != shownWindows else { return }
+        shownWindows = list
+        DispatchQueue.main.async { AppModel.shared.stripWindows = list }
     }
 
     /// Stop managing windows and bring every one of them on screen. The
