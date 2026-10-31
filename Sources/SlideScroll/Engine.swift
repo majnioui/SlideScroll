@@ -1561,7 +1561,7 @@ final class Engine {
             guard let w = windows[col.activeWindow] else { return nil }
             return Overlays.Column(window: w.id, pid: w.pid, focused: focused.map(col.windows.contains) ?? false)
         }
-        Overlays.showStrip(Overlays.Strip(columns: columns, viewport: m.viewport))
+        Overlays.showStrip(Overlays.Indicator(columns: columns, viewport: m.viewport))
     }
 
     // MARK: - The menu's window list

@@ -19,20 +19,20 @@ enum Overlays {
         let focused: Bool
     }
 
-    struct Strip: Equatable {
+    struct Indicator: Equatable {
         let columns: [Column]
         /// The display's usable area, in Accessibility coordinates.
         let viewport: Rect
     }
 
     private static let border = Latest<Border?> { applyBorder($0) }
-    private static let strip = Latest<Strip> { applyStrip($0) }
+    private static let strip = Latest<Indicator> { applyStrip($0) }
 
     /// Outline this window, or none. Callable from any thread.
     static func showBorder(_ b: Border?) { border.send(b) }
 
     /// Show the strip indicator for a moment. Callable from any thread.
-    static func showStrip(_ s: Strip) { strip.send(s) }
+    static func showStrip(_ s: Indicator) { strip.send(s) }
 
     // MARK: - Focus border
 
@@ -71,11 +71,12 @@ enum Overlays {
     private static var stripView: IndicatorView?
     private static var hideTimer: Timer?
 
-    private static func applyStrip(_ s: Strip) {
+    private static func applyStrip(_ s: Indicator) {
         guard s.columns.count > 1 else { return hide() }
-        let size = IndicatorView.size(for: s.columns.count, maxWidth: s.viewport.w - 80)
-        let r = Rect(x: s.viewport.x + (s.viewport.w - size.width) / 2,
-                     y: s.viewport.y + s.viewport.h - size.height - 24, w: size.width, h: size.height)
+        let vp = s.viewport
+        let size = IndicatorView.size(for: s.columns.count, maxWidth: vp.w - 80)
+        let (w, h) = (Double(size.width), Double(size.height))
+        let r = Rect(x: vp.x + (vp.w - w) / 2, y: vp.y + vp.h - h - 24, w: w, h: h)
         guard let frame = TabBars.appKitFrame(r) else { return }
         if let panel = stripPanel {
             panel.setFrame(frame, display: false)
@@ -176,7 +177,7 @@ private final class IndicatorView: NSView {
     private(set) var inside = false
     private var icons: [pid_t: NSImage] = [:]
 
-    private var scale: Double { bounds.height / (IndicatorView.icon + 2 * IndicatorView.padding) }
+    private var scale: Double { Double(bounds.height) / (IndicatorView.icon + 2 * IndicatorView.padding) }
 
     override var isFlipped: Bool { true }
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
