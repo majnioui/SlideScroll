@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- A `slidescroll://` URL for every action (`slidescroll://cycle-width`,
+  `slidescroll://focus-window-3`, …) plus `pause`, `resume`, `toggle-pause` and
+  `settings`, so Raycast, Alfred, Shortcuts and scripts can drive SlideScroll.
+  The app's binary takes the same names: `slidescroll focus-left`.
+- Opening widths per app: new windows of an app can open at ¼, ⅓, ½, ⅔, ¾ or
+  the full screen instead of half. Set them in Settings → Windows, or under
+  `[apps.width]` in config.toml.
+- A Buy Me a Coffee link in Settings → About.
+
 ## 0.1.2
 
 ### Changed

@@ -27,6 +27,9 @@ if CommandLine.arguments.contains("--list") {
     exit(0)
 }
 
+/// `slidescroll focus-left` and the like: hand it to the running app and exit.
+_ = Remote.runFromCommandLine(CommandLine.arguments)
+
 Log.start()
 Log.info("SlideScroll \(Update.version) starting")
 

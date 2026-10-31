@@ -616,7 +616,15 @@ final class Engine {
         let clampWidth = { (w: Double) in min(max(w, min(minWidth, full)), full) }
         var strip = monitors[mi].strip
         defer { monitors[mi].strip = strip }
+        let fresh = Set(ids.filter { !strip.contains($0) })
         let changed = strip.sync(ids, newWidth: half)
+
+        // New windows of apps with a width of their own open at it.
+        let appWidths = Prefs.current.appWidths
+        for f in mine where f.saved == nil && fresh.contains(f.window.id) {
+            guard let fraction = appWidths[appNames[f.window.id] ?? ""], let ci = strip.index(of: f.window.id) else { continue }
+            strip.columns[ci].width = fraction >= 1 ? full : clampWidth(strip.presetWidth(fraction, strip.inner(monitors[mi].viewport).w))
+        }
 
         // Newly seen windows that were in the saved layout get their old width back.
         for f in mine {

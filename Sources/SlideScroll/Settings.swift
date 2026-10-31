@@ -3,11 +3,12 @@ import SwiftUI
 
 private let author = "majnioui"
 private let website = "slidescroll.majnioui.me"
+private let coffee = "buymeacoffee.com/gr8moe"
 private let size = NSSize(width: 620, height: 560)
 
 /// The Settings window, with a tab per topic in its toolbar like System
 /// Settings: General (login, updates, setup checks, logging), Windows
-/// (swipes, the gap, apps that always float), Shortcuts and About.
+/// (swipes, the gap, apps that always float, app widths), Shortcuts and About.
 final class SettingsWindow: NSWindow, NSWindowDelegate {
     private static var window: SettingsWindow?
 
@@ -177,12 +178,12 @@ private struct GeneralTab: View {
 private struct WindowsTab: View {
     @EnvironmentObject var model: AppModel
 
-    /// Names of the running apps with windows of their own, that don't float yet.
-    private var appsToFloat: [String] {
+    /// Names of the running apps with windows of their own, other than `except`.
+    private func runningApps(except: (String) -> Bool) -> [String] {
         let names = NSWorkspace.shared.runningApplications
             .filter { $0.activationPolicy == .regular }
             .compactMap(\.localizedName)
-            .filter { $0 != "SlideScroll" && !model.prefs.floatApps.contains($0) }
+            .filter { $0 != "SlideScroll" && !except($0) }
         return Array(Set(names)).sorted { $0.lowercased() < $1.lowercased() }
     }
 
@@ -218,7 +219,7 @@ private struct WindowsTab: View {
                         Button("Remove") { model.changePrefs { $0.floatApps.removeAll { $0 == app } } }
                     }
                 }
-                let candidates = appsToFloat
+                let candidates = runningApps { model.prefs.floatApps.contains($0) }
                 Menu("Add App…") {
                     ForEach(candidates, id: \.self) { app in
                         Button(app) { model.changePrefs { $0.floatApps.append(app) } }
@@ -228,9 +229,38 @@ private struct WindowsTab: View {
                 .fixedSize()
                 Note("Lists the apps running now.")
             }
+            Section("Opening Width") {
+                Note("New windows of these apps open at this width instead of half the screen.")
+                let apps = model.prefs.appWidths.keys.sorted { $0.lowercased() < $1.lowercased() }
+                if apps.isEmpty { Note("No apps yet.") }
+                ForEach(apps, id: \.self) { app in
+                    HStack {
+                        Picker(app, selection: Binding(get: { model.prefs.appWidths[app] ?? 0.5 },
+                                                       set: { f in model.changePrefs { $0.appWidths[app] = f } })) {
+                            ForEach(widthChoices(app), id: \.self) { f in Text(Prefs.widthName(f)).tag(f) }
+                        }
+                        Button("Remove") { model.changePrefs { $0.appWidths[app] = nil } }
+                    }
+                }
+                let candidates = runningApps { model.prefs.appWidths[$0] != nil }
+                Menu("Add App…") {
+                    ForEach(candidates, id: \.self) { app in
+                        Button(app) { model.changePrefs { $0.appWidths[app] = 1.0 / 3 } }
+                    }
+                }
+                .disabled(candidates.isEmpty)
+                .fixedSize()
+            }
         }
         .formStyle(.grouped)
     }
+}
+
+/// The preset widths, plus one set by hand in config.toml that isn't one of them.
+private func widthChoices(_ app: String) -> [Double] {
+    let presets = Prefs.widths.map(\.1)
+    guard let f = AppModel.shared.prefs.appWidths[app], !presets.contains(where: { abs($0 - f) < 0.001 }) else { return presets }
+    return (presets + [f]).sorted()
 }
 
 private struct ShortcutsTab: View {
@@ -303,6 +333,7 @@ private struct AboutTab: View {
             Text("A scrolling window manager for macOS.")
             Text("Made by \(author)").padding(.bottom, 8)
             Link(website, destination: URL(string: "https://\(website)")!)
+            Link("☕  Buy me a coffee", destination: URL(string: "https://\(coffee)")!).padding(.top, 6)
             Spacer()
             Text("© \(author) · MIT License").font(.caption).foregroundStyle(.tertiary).padding(.bottom, 20)
         }

@@ -87,10 +87,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(item("Quit SlideScroll", #selector(quit), "q"))
     }
 
-    @objc private func togglePause() {
-        model.paused.toggle()
-        Hotkeys.enabled = !model.paused
-        Engine.shared?.send(model.paused ? .pause : .resume)
+    @objc private func togglePause() { setPaused(!model.paused) }
+
+    /// Stop or go back to managing windows, as the menu's Pause and Resume do.
+    func setPaused(_ paused: Bool) {
+        guard paused != model.paused else { return }
+        model.paused = paused
+        Hotkeys.enabled = !paused
+        Engine.shared?.send(paused ? .pause : .resume)
+    }
+
+    /// `slidescroll://` URLs, from Raycast, Shortcuts, the command line and so on.
+    func application(_ application: NSApplication, open urls: [URL]) {
+        for url in urls { Remote.handle(url) }
     }
 
     @objc private func openSettings() { SettingsWindow.show() }

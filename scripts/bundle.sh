@@ -54,6 +54,17 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     <string>public.app-category.productivity</string>
     <key>NSHighResolutionCapable</key>
     <true/>
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>$BUNDLE_ID</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>slidescroll</string>
+            </array>
+        </dict>
+    </array>
 </dict>
 </plist>
 PLIST

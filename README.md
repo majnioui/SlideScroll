@@ -256,7 +256,35 @@ gap = 12.0        # points between windows, 0 to 32
 
 [apps]
 float = ["Calculator", "System Settings"]
+
+[apps.width]      # new windows of these apps open at this width
+Ghostty = "1/3"   # "1/4", "1/3", "1/2", "2/3", "3/4", "full", or 0 to 1
+"Google Chrome" = "2/3"
 ```
+
+The widths are also in **Settings… → Windows → Opening Width**. They only apply
+to new windows. Windows SlideScroll already knows keep the width they had.
+
+## Scripting
+
+Every action has a URL, so Raycast, Alfred, Shortcuts, BetterTouchTool,
+Hammerspoon and scripts can run it. The name is the action's config name,
+written with dashes:
+
+```sh
+open -g slidescroll://cycle-width
+open -g slidescroll://focus-window-3
+open -g slidescroll://toggle-pause      # also pause, resume, settings
+```
+
+The app's binary takes the same names, which is handy in a shell alias:
+
+```sh
+/Applications/SlideScroll.app/Contents/MacOS/slidescroll focus-left
+```
+
+Run it with an unknown name to list every action. Actions do nothing while
+SlideScroll is paused, except `resume` and `toggle-pause`.
 
 ## Troubleshooting & FAQ
 
@@ -429,6 +457,8 @@ Done:
       apps that always float
 - [x] Setup checks in Settings that update as you fix them
 - [x] Animation timed to the display's refresh, with resizes that never stall it
+- [x] URL scheme and command line for every action
+- [x] Per-app opening widths
 
 Planned:
 
@@ -443,10 +473,10 @@ Planned:
 - [ ] Preset heights in a stack (⅓ / ½ / ⅔), expand a column to fill the empty
       space beside it
 - [ ] Scratch layer: one key shows or hides all floating windows
-- [ ] Per-app rules: open in a fixed slot or at a set width
+- [ ] Per-app rules: open in a fixed slot or pinned
 - [ ] Keep a window's own height instead of filling the column
 - [ ] Guided first run
-- [ ] CLI, URL scheme, Raycast commands
+- [ ] Raycast extension
 
 ## Contributing
 
