@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- The app icons in the strip indicator were upside down.
+
 ## 0.3.1
 
 The first release with these features. (0.3.0 was tagged, but its build failed, so it was never published.)

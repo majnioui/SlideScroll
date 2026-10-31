@@ -211,7 +211,9 @@ private final class IndicatorView: NSView {
                 let h = r.insetBy(dx: -5 * scale, dy: -5 * scale)
                 NSBezierPath(roundedRect: h, xRadius: 9 * scale, yRadius: 9 * scale).fill()
             }
-            image(c.pid)?.draw(in: r, from: .zero, operation: .sourceOver, fraction: c.focused ? 1 : 0.75)
+            // This view is flipped; the icon must not be.
+            image(c.pid)?.draw(in: r, from: .zero, operation: .sourceOver, fraction: c.focused ? 1 : 0.75,
+                               respectFlipped: true, hints: nil)
         }
     }
 
