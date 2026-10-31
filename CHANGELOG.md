@@ -1,6 +1,8 @@
 # Changelog
 
-## 0.3.0
+## 0.3.1
+
+The first release with these features. (0.3.0 was tagged, but its build failed, so it was never published.)
 
 ### Added
 

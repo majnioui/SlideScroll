@@ -444,11 +444,11 @@ Bump `VERSION`, add the release to `CHANGELOG.md`, commit, and check that
 [CI](.github/workflows/ci.yml) is green on `main`. Then push a matching tag:
 
 ```sh
-git tag v0.3.0 && git push origin v0.3.0
+git tag v0.3.1 && git push origin v0.3.1
 ```
 
 The [Release workflow](.github/workflows/release.yml) runs the checks, builds the
-app and publishes **SlideScroll 0.3.0** with a disk image, a zip and checksums.
+app and publishes **SlideScroll 0.3.1** with a disk image, a zip and checksums.
 `scripts/package.sh` makes the same files locally in `build/dist`. Builds are
 signed ad hoc unless the signing secrets listed in the workflow are set.
 
