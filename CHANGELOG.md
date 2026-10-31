@@ -5,6 +5,15 @@
 ### Fixed
 
 - The app icons in the strip indicator were upside down.
+- Clicking the strip indicator could reach the window behind it: only the
+  icons' own pixels caught clicks. Now the whole indicator does, and a click
+  anywhere picks the column under it. The indicator also stays when the
+  pointer reaches it while it's fading out.
+- Clicking while the strip was still scrolling (on the indicator, the Dock or
+  the menu bar) could be taken for dragging the focused window, which then
+  moved to another column or stacked onto its neighbour. Only a press on the
+  window itself counts as a drag now, and the indicator acts when the button
+  comes up.
 
 ## 0.3.1
 

@@ -34,6 +34,16 @@ enum Overlays {
     /// Show the strip indicator for a moment. Callable from any thread.
     static func showStrip(_ s: Indicator) { strip.send(s) }
 
+    private static let lock = NSLock()
+    /// Where the indicator is while it's on screen, in Accessibility coordinates.
+    private static var indicatorFrame: Rect?
+
+    /// The indicator is on screen at this point. Callable from any thread.
+    static func indicatorCovers(_ p: CGPoint) -> Bool {
+        guard let r = lock.withLock({ indicatorFrame }) else { return false }
+        return Double(p.x) >= r.x && Double(p.x) < r.x + r.w && Double(p.y) >= r.y && Double(p.y) < r.y + r.h
+    }
+
     // MARK: - Focus border
 
     private static var borderPanel: NSPanel?
@@ -78,6 +88,7 @@ enum Overlays {
         let (w, h) = (Double(size.width), Double(size.height))
         let r = Rect(x: vp.x + (vp.w - w) / 2, y: vp.y + vp.h - h - 24, w: w, h: h)
         guard let frame = TabBars.appKitFrame(r) else { return }
+        lock.withLock { indicatorFrame = r }
         if let panel = stripPanel {
             panel.setFrame(frame, display: false)
         } else {
@@ -88,7 +99,7 @@ enum Overlays {
             glass.autoresizingMask = [.width, .height]
             let view = IndicatorView(frame: NSRect(origin: .zero, size: frame.size))
             view.autoresizingMask = [.width, .height]
-            view.hovering = { inside in inside ? hideTimer?.invalidate() : hideLater() }
+            view.hovering = { inside in inside ? keep() : hideLater() }
             glass.addSubview(view)
             panel.contentView = glass
             stripPanel = panel
@@ -98,6 +109,16 @@ enum Overlays {
         stripPanel?.alphaValue = 1
         stripPanel?.orderFrontRegardless()
         if stripView?.inside != true { hideLater() }
+    }
+
+    /// The pointer is over the indicator: keep it, even if it had begun to fade.
+    private static func keep() {
+        hideTimer?.invalidate()
+        guard let panel = stripPanel, panel.isVisible else { return }
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0
+            panel.animator().alphaValue = 1
+        }
     }
 
     private static func hideLater() {
@@ -114,7 +135,10 @@ enum Overlays {
             panel.animator().alphaValue = 0
         }, completionHandler: {
             // Shown again while fading out: leave it.
-            if panel.alphaValue == 0 { panel.orderOut(nil) }
+            if panel.alphaValue == 0 {
+                panel.orderOut(nil)
+                lock.withLock { indicatorFrame = nil }
+            }
         })
     }
 }
@@ -197,13 +221,27 @@ private final class IndicatorView: NSView {
                       y: IndicatorView.padding * s, width: IndicatorView.icon * s, height: IndicatorView.icon * s)
     }
 
-    override func mouseDown(with event: NSEvent) {
+    /// Taken, so the click is ours; it counts when the button comes up.
+    override func mouseDown(with event: NSEvent) {}
+
+    /// Anywhere on the indicator picks the icon in that column, gaps and
+    /// padding included. On release, like a button: the strip scrolling
+    /// while the button is still down would look like the user dragging
+    /// the focused window, and drop it somewhere.
+    override func mouseUp(with event: NSEvent) {
         let p = convert(event.locationInWindow, from: nil)
-        guard let i = columns.indices.first(where: { slot($0).insetBy(dx: -IndicatorView.spacing / 2, dy: -IndicatorView.padding).contains(p) }) else { return }
+        guard !columns.isEmpty, bounds.contains(p) else { return }
+        let x = Double(p.x) / scale - IndicatorView.padding + IndicatorView.spacing / 2
+        let i = min(max(Int(x / (IndicatorView.icon + IndicatorView.spacing)), 0), columns.count - 1)
         Engine.shared?.send(.focusWindow(columns[i].window))
     }
 
     override func draw(_ dirtyRect: NSRect) {
+        // macOS passes clicks on fully transparent pixels to the window
+        // below, and the glass behind counts as transparent. A wash too
+        // faint to see keeps every click on the indicator.
+        NSColor.black.withAlphaComponent(0.01).setFill()
+        bounds.fill()
         for (i, c) in columns.enumerated() {
             let r = slot(i)
             if c.focused {

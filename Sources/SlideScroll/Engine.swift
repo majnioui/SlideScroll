@@ -1112,6 +1112,12 @@ final class Engine {
     }
 
     /// The pointer is on the window's title bar, where windows are dragged from.
+    private func pointerOn(_ win: Window) -> Bool {
+        guard let p = win.position, let s = win.size else { return false }
+        let m = AX.mouseLocation
+        return m.x >= p.x && m.x < p.x + s.width && m.y >= p.y && m.y < p.y + s.height
+    }
+
     private func grabbedByTitleBar(_ win: Window) -> Bool {
         guard let p = win.position, let s = win.size else { return false }
         let m = AX.mouseLocation
@@ -1320,11 +1326,14 @@ final class Engine {
         case .windowDragged(let id):
             // While the mouse is down our own animation may still move other
             // windows; the one the user grabbed has the pointer on its title
-            // bar, or has focus. Grabbing a window that isn't focused moves it
-            // before macOS reports it as focused, so the pointer counts first.
-            // Drag events still queued after the mouse was released don't count.
-            if let win = windows[id], !dragging.contains(id), AX.mouseDown,
-               grabbedByTitleBar(win) || AX.focusedWindowID() == id {
+            // bar, or has focus and the pointer on it. Grabbing a window that
+            // isn't focused moves it before macOS reports it as focused, so
+            // the pointer counts first. A click elsewhere (the strip
+            // indicator, the Dock, the menu bar) while the strip is still
+            // scrolling isn't a drag. Drag events still queued after the mouse
+            // was released don't count.
+            if let win = windows[id], !dragging.contains(id), AX.mouseDown, !Overlays.indicatorCovers(AX.mouseLocation),
+               grabbedByTitleBar(win) || (AX.focusedWindowID() == id && pointerOn(win)) {
                 dragging.insert(id)
             }
             if dragging.contains(id) { showDropHint() }
