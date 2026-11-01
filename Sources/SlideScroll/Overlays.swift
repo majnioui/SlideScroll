@@ -1,17 +1,10 @@
 import AppKit
 import SlideScrollCore
 
-/// The outline around the focused window, and the row of app icons shown
-/// for a moment while moving along the strip. Like the tab bars, the engine
-/// hands over plain data from its own queue; panels are only touched on the
-/// main thread.
+/// The row of app icons shown for a moment while moving along the strip.
+/// Like the tab bars, the engine hands over plain data from its own queue;
+/// panels are only touched on the main thread.
 enum Overlays {
-    /// The focused window and where it is now, in Accessibility coordinates.
-    struct Border: Equatable {
-        let window: CGWindowID
-        let frame: Rect
-    }
-
     /// One column in the strip indicator: the window it shows.
     struct Column: Equatable {
         let window: CGWindowID
@@ -25,11 +18,7 @@ enum Overlays {
         let viewport: Rect
     }
 
-    private static let border = Latest<Border?> { applyBorder($0) }
     private static let strip = Latest<Indicator> { applyStrip($0) }
-
-    /// Outline this window, or none. Callable from any thread.
-    static func showBorder(_ b: Border?) { border.send(b) }
 
     /// Show the strip indicator for a moment. Callable from any thread.
     static func showStrip(_ s: Indicator) { strip.send(s) }
@@ -44,41 +33,6 @@ enum Overlays {
         return Double(p.x) >= r.x && Double(p.x) < r.x + r.w && Double(p.y) >= r.y && Double(p.y) < r.y + r.h
     }
 
-    // MARK: - Focus border
-
-    private static var borderPanel: NSPanel?
-    private static var borderWindow: CGWindowID?
-
-    private static func applyBorder(_ b: Border?) {
-        guard let b, let frame = TabBars.appKitFrame(b.frame) else {
-            borderPanel?.orderOut(nil)
-            borderWindow = nil
-            return
-        }
-        let rect = frame.insetBy(dx: -BorderView.width, dy: -BorderView.width)
-        let panel = borderPanel ?? {
-            let panel = TabBars.makePanel(rect)
-            panel.ignoresMouseEvents = true
-            panel.contentView = BorderView(frame: NSRect(origin: .zero, size: rect.size))
-            panel.contentView?.autoresizingMask = [.width, .height]
-            borderPanel = panel
-            return panel
-        }()
-        // Moving it, which most frames do, needs no drawing: the ring is a
-        // layer border that the window server draws as it composites.
-        if panel.frame.size != rect.size {
-            panel.setFrame(rect, display: false)
-        } else if panel.frame.origin != rect.origin {
-            panel.setFrameOrigin(rect.origin)
-        }
-        // In front of the windows it sits between; the focused window, and
-        // any pins, are raised above it as focus lands.
-        if borderWindow != b.window || !panel.isVisible {
-            borderWindow = b.window
-            panel.orderFrontRegardless()
-        }
-    }
-
     // MARK: - Strip indicator
 
     /// How long the indicator stays after the last move, in seconds.
@@ -87,6 +41,9 @@ enum Overlays {
     private static var stripView: IndicatorView?
     /// What the indicator shows now, to skip updates that change nothing.
     private static var shownStrip: Indicator?
+    /// The indicator is on screen. Kept here because asking the window
+    /// (`isVisible`) waits for a round trip to the window server.
+    private static var showing = false
     private static var hideTimer: Timer?
 
     private static func applyStrip(_ s: Indicator) {
@@ -99,7 +56,7 @@ enum Overlays {
         lock.withLock { indicatorFrame = r }
         if let panel = stripPanel {
             // Already showing just this: only its time on screen starts over.
-            if s == shownStrip && panel.isVisible && panel.alphaValue == 1 {
+            if s == shownStrip && showing && panel.alphaValue == 1 {
                 if stripView?.inside != true { hideLater() }
                 return
             }
@@ -120,13 +77,14 @@ enum Overlays {
         }
         shownStrip = s
         stripView?.columns = s.columns
-        if let panel = stripPanel, !panel.isVisible || panel.alphaValue < 1 {
+        if let panel = stripPanel, !showing || panel.alphaValue < 1 {
             // Stops a fade-out under way, too.
             NSAnimationContext.runAnimationGroup { ctx in
                 ctx.duration = 0
                 panel.animator().alphaValue = 1
             }
             panel.orderFrontRegardless()
+            showing = true
         }
         if stripView?.inside != true { hideLater() }
     }
@@ -134,7 +92,7 @@ enum Overlays {
     /// The pointer is over the indicator: keep it, even if it had begun to fade.
     private static func keep() {
         hideTimer?.invalidate()
-        guard let panel = stripPanel, panel.isVisible else { return }
+        guard let panel = stripPanel, showing else { return }
         NSAnimationContext.runAnimationGroup { ctx in
             ctx.duration = 0
             panel.animator().alphaValue = 1
@@ -148,7 +106,7 @@ enum Overlays {
 
     private static func hide() {
         hideTimer?.invalidate()
-        guard let panel = stripPanel, panel.isVisible else { return }
+        guard let panel = stripPanel, showing else { return }
         let reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         NSAnimationContext.runAnimationGroup({ ctx in
             ctx.duration = reduceMotion ? 0 : 0.25
@@ -157,6 +115,7 @@ enum Overlays {
             // Shown again while fading out: leave it.
             if panel.alphaValue == 0 {
                 panel.orderOut(nil)
+                showing = false
                 lock.withLock { indicatorFrame = nil }
             }
         })
@@ -186,39 +145,6 @@ private final class Latest<T> {
             }
             apply(value)
         }
-    }
-}
-
-/// An accent-coloured ring just outside the window, rounded like its corners.
-/// A layer border rather than drawn: it follows the window every frame, and
-/// a drawn ring the size of a window would be painted again each time.
-private final class BorderView: NSView {
-    static let width = 3.0
-    private static let windowRadius: Double = { if #available(macOS 26, *) { 16 } else { 10 } }()
-    private var accentObserver: NSObjectProtocol?
-
-    override init(frame: NSRect) {
-        super.init(frame: frame)
-        wantsLayer = true
-        layerContentsRedrawPolicy = .onSetNeedsDisplay
-        layer?.borderWidth = BorderView.width
-        layer?.cornerRadius = BorderView.windowRadius + BorderView.width
-        layer?.cornerCurve = .continuous
-        // The accent colour can change in System Settings.
-        accentObserver = NotificationCenter.default.addObserver(
-            forName: NSColor.systemColorsDidChangeNotification, object: nil, queue: .main) { [weak self] _ in
-            self?.needsDisplay = true
-        }
-    }
-
-    required init?(coder: NSCoder) { fatalError("not used") }
-
-    deinit { accentObserver.map(NotificationCenter.default.removeObserver) }
-
-    override var wantsUpdateLayer: Bool { true }
-
-    override func updateLayer() {
-        layer?.borderColor = NSColor.controlAccentColor.cgColor
     }
 }
 
@@ -293,10 +219,22 @@ private final class IndicatorView: NSView {
         }
     }
 
+    /// The app's icon, scaled once to the size it's drawn at. Scaling the
+    /// full-size icon on every redraw cost more than the rest of a shortcut.
     private func image(_ pid: pid_t) -> NSImage? {
         if let i = icons[pid] { return i }
-        let i = NSRunningApplication(processIdentifier: pid)?.icon
-        icons[pid] = i
-        return i
+        guard let icon = NSRunningApplication(processIdentifier: pid)?.icon else { return nil }
+        let side = Int(IndicatorView.icon * (window?.backingScaleFactor ?? 2))
+        guard let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: side, pixelsHigh: side, bitsPerSample: 8,
+                                         samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB,
+                                         bytesPerRow: 0, bitsPerPixel: 0) else { return icon }
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
+        icon.draw(in: NSRect(x: 0, y: 0, width: side, height: side))
+        NSGraphicsContext.restoreGraphicsState()
+        let small = NSImage(size: NSSize(width: IndicatorView.icon, height: IndicatorView.icon))
+        small.addRepresentation(rep)
+        icons[pid] = small
+        return small
     }
 }

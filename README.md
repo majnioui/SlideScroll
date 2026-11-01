@@ -56,7 +56,7 @@ checking GitHub for updates, which Settings can turn off.
 - **Pinning.** Keep a column at the left or right edge while the rest scrolls past.
 - **Always know where you are.** While you move, a row of app icons shows every
   column, with yours highlighted; click one to jump there. The menu bar menu
-  lists every window too, and an optional outline marks the focused one.
+  lists every window too.
 - **Undo.** `⌃⌥Z` puts back the last layout change, whether a shortcut or a
   drag did it, and `⌃⌥⇧Z` redoes it. `⌃⌥⇥` jumps back to the window you were
   just in.
@@ -265,7 +265,6 @@ natural = false   # reverse the direction
 
 [layout]
 gap = 12.0        # points between windows, 0 to 32
-focus_border = true   # outline the focused window
 show_strip = false    # don't show app icons while moving along the strip
 
 [apps]
@@ -475,7 +474,6 @@ Done:
 - [x] Per-app opening widths
 - [x] A lone window keeps the height you drag it to
 - [x] Strip indicator: app icons while navigating, click to jump
-- [x] Focus border
 - [x] Undo the last layout change
 - [x] Jump back to the previously focused window
 - [x] Windows of the strip in the menu bar menu, click to jump

@@ -240,8 +240,6 @@ final class Engine {
     private var savedSignature: [SignatureEntry] = []
     /// The tab bars last handed to the UI.
     private var shownBars: [TabBar] = []
-    /// The focus border last handed to the UI.
-    private var shownBorder: Overlays.Border?
     /// The strip indicator last handed to the UI, and when.
     private var shownIndicator: (strip: Overlays.Indicator, at: Double)?
     /// The strip's windows last handed to the menu.
@@ -406,8 +404,8 @@ final class Engine {
         }
         publishTabBars()
         trackFocus()
-        publishWindows()
-        publishFocusBorder()
+        // The menu's list can wait until the strip is still: no work per frame.
+        if !isAnimating { publishWindows() }
 
         let animating = isAnimating
         let wantClock = animating && FrameClock.available ? animatedDisplay : nil
@@ -1551,19 +1549,6 @@ final class Engine {
     }
 
     // MARK: - Overlays
-
-    /// Outline the focused window as it moves, if Settings asks for it.
-    private func publishFocusBorder() {
-        var border: Overlays.Border?
-        if Prefs.current.focusBorder && !paused && !suspended && monitors.indices.contains(active) && !monitors[active].away,
-           let id = monitors[active].strip.focusedWindow, !dragging.contains(id), let a = anims[id] {
-            let s = a.resizing ?? a.appliedSize
-            border = Overlays.Border(window: id, frame: Rect(x: a.x.value, y: a.y.value, w: s.width, h: s.height))
-        }
-        guard border != shownBorder else { return }
-        shownBorder = border
-        Overlays.showBorder(border)
-    }
 
     /// Show the strip's columns for a moment, after a shortcut or during a swipe.
     private func showStripIndicator(_ mi: Int? = nil) {

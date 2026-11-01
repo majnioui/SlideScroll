@@ -18,7 +18,7 @@ SlideScroll brings the scrolling layout of PaperWM and niri (Linux) to the Mac. 
 - Stacks (several windows in one column) and tabbed columns; native macOS tabs stay in their column.
 - Pin a column to the left or right edge while the rest scrolls past.
 - One strip per display; send windows between displays by shortcut or drag.
-- A strip indicator of app icons while moving, a list of the strip's windows in the menu bar, and an optional outline around the focused window.
+- A strip indicator of app icons while moving, and a list of the strip's windows in the menu bar.
 - Undo and redo for layout changes, and a shortcut to jump back to the previous window.
 - Per-app opening widths and apps that always float.
 - Every action has a `slidescroll://` URL (for example `slidescroll://focus-left`) and a command-line name, for Raycast, Alfred, Shortcuts and scripts.

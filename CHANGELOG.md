@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Swiping and moving with shortcuts do less work, so the strip keeps up with
+  you as well as it did before 0.3.0.
+
 ## 0.3.3
 
 ### Fixed
