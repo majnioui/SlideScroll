@@ -9,8 +9,8 @@
 class Slidescroll < Formula
   desc "Scrolling window manager for macOS"
   homepage "https://slidescroll.majnioui.me"
-  url "https://github.com/majnioui/SlideScroll/archive/refs/tags/v0.3.3.tar.gz"
-  sha256 "95fba2f9c9d6abb16d1c4b6cdc64482a605182ea257c1e0a22837ba7b5375b1b"
+  url "https://github.com/majnioui/SlideScroll/archive/refs/tags/v0.3.4.tar.gz"
+  sha256 "35cbd2bbb750dbc405aa18f9a750bc4ca675470cdd43abc1bc1e0dbb8b68b0b6"
   license "MIT"
   head "https://github.com/majnioui/SlideScroll.git", branch: "main"
 
