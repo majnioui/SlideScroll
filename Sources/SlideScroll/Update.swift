@@ -35,7 +35,7 @@ enum Update {
     private static var checker: Task<Void, Never>?
 
     static var version: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.3.3"
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.3.4"
     }
 
     /// Show the state in the menu and Settings.
