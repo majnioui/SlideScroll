@@ -14,6 +14,10 @@ build step: deploy this folder as it is to any static host.
   loads a self-hosted Umami script (cookieless) and asks GitHub's API for the
   latest release. The demo video comes from YouTube (its no-cookie domain)
   only once a visitor presses play.
+- `robots.txt`, `sitemap.xml`: for search engines. `llms.txt`: a plain summary
+  of SlideScroll for AI assistants. Keep its facts in step with the main README.
+- `assets/og.jpg`: the preview image when the page is shared, the same
+  screenshot as the README's demo video poster.
 - `CNAME`: the custom domain, for GitHub Pages. Other hosts ignore it.
 
 `.hallmark/` holds design-tool notes and renders, git-ignored; don't deploy it.

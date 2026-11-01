@@ -160,6 +160,14 @@ html:not(.js) .switch__panel[hidden] { display: grid !important; margin-top: var
 .rows dt { font-weight: 600; letter-spacing: -0.016em; }
 .rows dd { margin: 0; font-size: var(--text-sm); color: var(--color-muted); }
 
+/* questions */
+
+.qa { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-xl) var(--gap-columns); max-width: 960px; margin: 0 auto; }
+.qa > div { display: grid; align-content: start; gap: 8px; padding-top: var(--space-md); border-top: var(--hair) solid var(--color-rule); }
+.qa dt { font-weight: 600; letter-spacing: -0.016em; }
+.qa dd { margin: 0; color: var(--color-muted); }
+.qa code { font: 400 0.95em var(--font-code); color: var(--color-ink); }
+
 /* the close: the install again */
 
 .close { text-align: center; }
@@ -187,6 +195,7 @@ html:not(.js) .switch__panel[hidden] { display: grid !important; margin-top: var
   .hero { padding-top: var(--space-2xl); }
   .hero__icon { width: 80px; height: 80px; }
   .rows { grid-template-columns: minmax(0, 1fr); }
+  .qa { grid-template-columns: minmax(0, 1fr); }
   .demo__screen { aspect-ratio: 3 / 4; }
   .menubar > :not(.menubar__app):not(.menubar__end) { display: none; }
   .get .btn { width: 100%; }

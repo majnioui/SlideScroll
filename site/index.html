@@ -3,13 +3,55 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SlideScroll, a scrolling window manager for macOS</title>
-<meta name="description" content="SlideScroll puts your Mac's windows on an endless horizontal strip: new windows slide in and nothing shrinks. Free and open source.">
+<title>SlideScroll: a free scrolling window manager for macOS</title>
+<meta name="description" content="Free, open-source window manager for Mac. Windows sit on an endless strip you move through with the keyboard or a swipe; opening one never squeezes the rest.">
+<link rel="canonical" href="https://slidescroll.majnioui.me/">
 <link rel="icon" href="assets/icon-64.png" type="image/png">
 <link rel="apple-touch-icon" href="assets/icon-256.png">
-<meta property="og:title" content="SlideScroll">
-<meta property="og:description" content="A scrolling window manager for macOS. New windows slide in; nothing shrinks.">
-<meta property="og:image" content="https://slidescroll.majnioui.me/assets/icon-512.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SlideScroll">
+<meta property="og:url" content="https://slidescroll.majnioui.me/">
+<meta property="og:title" content="SlideScroll: a scrolling window manager for macOS">
+<meta property="og:description" content="Windows on an endless horizontal strip, moved with the keyboard or a swipe. Opening one never squeezes the rest. Free and open source.">
+<meta property="og:image" content="https://slidescroll.majnioui.me/assets/og.jpg">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="800">
+<meta property="og:image:alt" content="Safari, Ghostty, Sublime Text and Spotify side by side on SlideScroll's strip.">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "SlideScroll",
+  "description": "A scrolling window manager for macOS. Every window is a column on a horizontal strip that runs past the edges of the screen, at the width you chose. Move along it with keyboard shortcuts or a trackpad swipe; opening a window never resizes the others.",
+  "url": "https://slidescroll.majnioui.me/",
+  "applicationCategory": "UtilitiesApplication",
+  "applicationSubCategory": "Window manager",
+  "operatingSystem": "macOS 13 or later (Apple silicon)",
+  "softwareVersion": "0.3.3",
+  "downloadUrl": "https://github.com/majnioui/SlideScroll/releases/download/v0.3.3/SlideScroll-0.3.3.dmg",
+  "installUrl": "https://slidescroll.majnioui.me/#install",
+  "screenshot": "https://slidescroll.majnioui.me/assets/og.jpg",
+  "image": "https://slidescroll.majnioui.me/assets/icon-512.png",
+  "license": "https://opensource.org/licenses/MIT",
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "author": { "@type": "Person", "name": "majnioui", "url": "https://majnioui.me" },
+  "codeRepository": "https://github.com/majnioui/SlideScroll",
+  "sameAs": ["https://github.com/majnioui/SlideScroll", "https://www.producthunt.com/products/slidescroll"],
+  "featureList": [
+    "Scrolling, column-based window layout on a horizontal strip",
+    "Keyboard shortcuts for every action, remappable, on any keyboard layout",
+    "Three- or four-finger trackpad swipes",
+    "Column widths of a quarter, third, half, two thirds or three quarters of the screen",
+    "Stacked and tabbed columns, and columns pinned to a screen edge",
+    "A strip on each display, with windows sent between displays",
+    "Undo and redo for layout changes",
+    "slidescroll:// URLs and a command line for Raycast, Alfred and Shortcuts",
+    "Needs only the Accessibility permission; SIP stays on"
+  ]
+}
+</script>
 <meta name="theme-color" content="#ffffff">
 <link rel="stylesheet" href="styles.css?v=0.3.3">
 <script>document.documentElement.classList.add('js');</script>
@@ -27,6 +69,7 @@
       <a href="#demo">How it works</a>
       <a href="#video">Video</a>
       <a href="#keys">Shortcuts</a>
+<a href="#questions">Questions</a>
       <a href="https://github.com/majnioui/SlideScroll">GitHub</a>
       <a class="btn btn--primary btn--small" href="#install">Download</a>
     </nav>
@@ -208,6 +251,8 @@
           <tr><th scope="row">Full width and back</th><td><kbd>⌃⌥F</kbd></td></tr>
           <tr><th scope="row">Stack into a neighbour</th><td><kbd>⌃⌥[</kbd> <kbd>⌃⌥]</kbd></td></tr>
           <tr><th scope="row">Pin to an edge</th><td><kbd>⌃⌥P</kbd></td></tr>
+<tr><th scope="row">Jump back to the last window</th><td><kbd>⌃⌥⇥</kbd></td></tr>
+<tr><th scope="row">Undo a layout change</th><td><kbd>⌃⌥Z</kbd></td></tr>
         </tbody>
       </table>
     </div>
@@ -227,7 +272,23 @@
     </div>
   </section>
 
-  <section class="section close" id="install" aria-labelledby="install-head">
+  <section class="section faq" id="questions" aria-labelledby="faq-head">
+<div class="container">
+<div class="section__head">
+<h2 id="faq-head">Questions.</h2>
+</div>
+<dl class="qa">
+<div><dt>What is a scrolling window manager?</dt><dd>Instead of dividing the screen into ever-smaller tiles, every window is a column on a strip that runs past the edges of the screen. You scroll the strip to reach a window, the way <a href="https://github.com/paperwm/PaperWM">PaperWM</a> and <a href="https://github.com/YaLTeR/niri">niri</a> work on Linux. SlideScroll brings that to macOS.</dd></div>
+<div><dt>How is it different from a tiling window manager?</dt><dd>Tiling window managers such as yabai, AeroSpace and Amethyst make room for a new window by shrinking the ones already open. SlideScroll never does: each column keeps the width you gave it, and the new one slides in beside the window you’re using.</dd></div>
+<div><dt>Can I manage windows with the keyboard alone?</dt><dd>Yes. Every action has a shortcut, and you can give each one two of your own. Shortcuts follow physical keys, so they work on any keyboard layout. Every action also has a <code>slidescroll://</code> URL and a command-line name, for Raycast, Alfred, Shortcuts and scripts.</dd></div>
+<div><dt>Do I need to turn off System Integrity Protection?</dt><dd>No. SlideScroll only needs the Accessibility permission, which macOS asks for once. No Screen Recording, no Input Monitoring, and SIP stays on.</dd></div>
+<div><dt>How is it different from Rectangle or Magnet?</dt><dd>Snapping tools put a window into a half or a third of the screen when you ask. SlideScroll arranges every window all the time, on a strip that can hold more windows than fit on screen at once.</dd></div>
+<div><dt>Does it work with several displays and full-screen apps?</dt><dd>Each display has its own strip, and a shortcut or a drag sends a window to another one. Full-screen apps and other Spaces are left alone, and quitting, pausing or even a crash puts every window back on screen.</dd></div>
+</dl>
+</div>
+</section>
+
+<section class="section close" id="install" aria-labelledby="install-head">
     <div class="container close__text">
       <img class="close__icon" src="assets/icon-256.png" width="72" height="72" alt="">
       <h2 id="install-head">Give your windows room.</h2>

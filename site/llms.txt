@@ -1,0 +1,44 @@
+# SlideScroll
+
+> SlideScroll is a free, open-source scrolling window manager for macOS. Every window is a column on a horizontal strip that runs past the edges of the screen, at the width you chose. You move along the strip with keyboard shortcuts or a three- or four-finger trackpad swipe, and opening a window never resizes the others. It is a native Mac app (Swift, no Electron), MIT licensed, for macOS 13 Ventura or later on Apple silicon.
+
+SlideScroll brings the scrolling layout of PaperWM and niri (Linux) to the Mac. It is an alternative to tiling window managers such as yabai, AeroSpace and Amethyst, which shrink open windows to make room for a new one, and to snapping tools such as Rectangle and Magnet, which place one window at a time when asked.
+
+## Key facts
+
+- Price: free. License: MIT. No account, no telemetry in the app; its only network access is an update check that can be turned off.
+- Requirements: macOS 13 or later, Apple silicon (M1 or later). A trackpad is optional: everything works with a keyboard and mouse.
+- Permissions: only Accessibility. No Screen Recording, no Input Monitoring, and System Integrity Protection (SIP) stays on.
+- Install: `curl -fsSL https://slidescroll.majnioui.me/install.sh | sh`, the disk image from GitHub Releases, or `brew tap majnioui/slidescroll https://github.com/majnioui/SlideScroll && brew install slidescroll` (builds from source).
+- Updates: built in, checked against the release's checksums.
+
+## Features
+
+- Columns keep their width: cycle through ¼, ⅓, ½, ⅔ and ¾ of the screen, go full width and back, centre a column, nudge it wider or narrower.
+- Stacks (several windows in one column) and tabbed columns; native macOS tabs stay in their column.
+- Pin a column to the left or right edge while the rest scrolls past.
+- One strip per display; send windows between displays by shortcut or drag.
+- A strip indicator of app icons while moving, a list of the strip's windows in the menu bar, and an optional outline around the focused window.
+- Undo and redo for layout changes, and a shortcut to jump back to the previous window.
+- Per-app opening widths and apps that always float.
+- Every action has a `slidescroll://` URL (for example `slidescroll://focus-left`) and a command-line name, for Raycast, Alfred, Shortcuts and scripts.
+- Every shortcut can be remapped, two per action; shortcuts follow physical keys, so they work on any keyboard layout.
+- Leaves full-screen apps and other Spaces alone; quitting, pausing or a crash puts every window back on screen.
+
+## Default shortcuts
+
+- Focus left / right: ⌃⌥H / ⌃⌥L (or ⌃⌥← / ⌃⌥→)
+- Move the column left / right: ⌃⌥⇧H / ⌃⌥⇧L
+- Cycle width: ⌃⌥R. Full width: ⌃⌥F. Centre: ⌃⌥C
+- Stack into the left / right column: ⌃⌥[ / ⌃⌥]
+- Pin to the left / right edge: ⌃⌥P / ⌃⌥⇧P
+- Jump back to the previous window: ⌃⌥⇥
+- Undo / redo a layout change: ⌃⌥Z / ⌃⌥⇧Z
+
+## Links
+
+- [Website](https://slidescroll.majnioui.me/): overview, interactive demo, install
+- [Source code and README](https://github.com/majnioui/SlideScroll): full documentation, configuration (`config.toml`), troubleshooting
+- [Latest release](https://github.com/majnioui/SlideScroll/releases/latest): disk image, zip and checksums
+- [Changelog](https://github.com/majnioui/SlideScroll/blob/main/CHANGELOG.md)
+- [Demo video](https://youtu.be/o-sgR5RTtwk): 40 seconds on a real Mac
