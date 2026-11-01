@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Swiping could feel less smooth since 0.3.0. The strip indicator was moved
+  and brought to the front on every trackpad event, and the focus outline was
+  painted again on every frame. Now the indicator only changes when what it
+  shows does, and the outline is drawn by the window server as it moves.
+  SlideScroll does about half the work it did during a swipe, or a third less
+  with the outline on.
+
 ## 0.3.2
 
 ### Fixed

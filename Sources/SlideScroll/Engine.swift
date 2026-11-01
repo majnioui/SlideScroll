@@ -18,6 +18,9 @@ private let focusPoll = 0.300
 private let rescanEvery = 2.0
 /// How often to check for mouse release while the user is dragging.
 private let dragPoll = 0.030
+/// How often an unchanged strip indicator is told to stay, in seconds:
+/// well within the time it stays after the last word.
+private let indicatorRefresh = 0.25
 /// Strip points scrolled per full trackpad width swiped, as a multiple of the viewport width.
 private let swipeSpeed = 1.5
 /// How far a released swipe coasts, in seconds of its final speed.
@@ -239,6 +242,8 @@ final class Engine {
     private var shownBars: [TabBar] = []
     /// The focus border last handed to the UI.
     private var shownBorder: Overlays.Border?
+    /// The strip indicator last handed to the UI, and when.
+    private var shownIndicator: (strip: Overlays.Indicator, at: Double)?
     /// The strip's windows last handed to the menu.
     private var shownWindows: [StripWindow] = []
     /// Every strip's arrangement before each layout change, newest last,
@@ -1570,7 +1575,12 @@ final class Engine {
             guard let w = windows[col.activeWindow] else { return nil }
             return Overlays.Column(window: w.id, pid: w.pid, focused: focused.map(col.windows.contains) ?? false)
         }
-        Overlays.showStrip(Overlays.Indicator(columns: columns, viewport: m.viewport))
+        // A swipe asks on every trackpad event; the UI only needs to hear
+        // of a change, or now and then that the indicator should stay.
+        let strip = Overlays.Indicator(columns: columns, viewport: m.viewport)
+        if let shown = shownIndicator, shown.strip == strip, now() - shown.at < indicatorRefresh { return }
+        shownIndicator = (strip, now())
+        Overlays.showStrip(strip)
     }
 
     // MARK: - The menu's window list

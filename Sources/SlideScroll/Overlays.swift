@@ -64,7 +64,13 @@ enum Overlays {
             borderPanel = panel
             return panel
         }()
-        if panel.frame != rect { panel.setFrame(rect, display: true) }
+        // Moving it, which most frames do, needs no drawing: the ring is a
+        // layer border that the window server draws as it composites.
+        if panel.frame.size != rect.size {
+            panel.setFrame(rect, display: false)
+        } else if panel.frame.origin != rect.origin {
+            panel.setFrameOrigin(rect.origin)
+        }
         // In front of the windows it sits between; the focused window, and
         // any pins, are raised above it as focus lands.
         if borderWindow != b.window || !panel.isVisible {
@@ -79,6 +85,8 @@ enum Overlays {
     private static let linger = 1.0
     private static var stripPanel: NSPanel?
     private static var stripView: IndicatorView?
+    /// What the indicator shows now, to skip updates that change nothing.
+    private static var shownStrip: Indicator?
     private static var hideTimer: Timer?
 
     private static func applyStrip(_ s: Indicator) {
@@ -90,7 +98,12 @@ enum Overlays {
         guard let frame = TabBars.appKitFrame(r) else { return }
         lock.withLock { indicatorFrame = r }
         if let panel = stripPanel {
-            panel.setFrame(frame, display: false)
+            // Already showing just this: only its time on screen starts over.
+            if s == shownStrip && panel.isVisible && panel.alphaValue == 1 {
+                if stripView?.inside != true { hideLater() }
+                return
+            }
+            if panel.frame != frame { panel.setFrame(frame, display: false) }
         } else {
             let panel = TabBars.makePanel(frame)
             // Above the windows, which move underneath it.
@@ -105,9 +118,16 @@ enum Overlays {
             stripPanel = panel
             stripView = view
         }
+        shownStrip = s
         stripView?.columns = s.columns
-        stripPanel?.alphaValue = 1
-        stripPanel?.orderFrontRegardless()
+        if let panel = stripPanel, !panel.isVisible || panel.alphaValue < 1 {
+            // Stops a fade-out under way, too.
+            NSAnimationContext.runAnimationGroup { ctx in
+                ctx.duration = 0
+                panel.animator().alphaValue = 1
+            }
+            panel.orderFrontRegardless()
+        }
         if stripView?.inside != true { hideLater() }
     }
 
@@ -170,17 +190,35 @@ private final class Latest<T> {
 }
 
 /// An accent-coloured ring just outside the window, rounded like its corners.
+/// A layer border rather than drawn: it follows the window every frame, and
+/// a drawn ring the size of a window would be painted again each time.
 private final class BorderView: NSView {
     static let width = 3.0
     private static let windowRadius: Double = { if #available(macOS 26, *) { 16 } else { 10 } }()
+    private var accentObserver: NSObjectProtocol?
 
-    override func draw(_ dirtyRect: NSRect) {
-        let w = BorderView.width
-        let path = NSBezierPath(roundedRect: bounds.insetBy(dx: w / 2, dy: w / 2),
-                                xRadius: BorderView.windowRadius + w / 2, yRadius: BorderView.windowRadius + w / 2)
-        NSColor.controlAccentColor.setStroke()
-        path.lineWidth = w
-        path.stroke()
+    override init(frame: NSRect) {
+        super.init(frame: frame)
+        wantsLayer = true
+        layerContentsRedrawPolicy = .onSetNeedsDisplay
+        layer?.borderWidth = BorderView.width
+        layer?.cornerRadius = BorderView.windowRadius + BorderView.width
+        layer?.cornerCurve = .continuous
+        // The accent colour can change in System Settings.
+        accentObserver = NotificationCenter.default.addObserver(
+            forName: NSColor.systemColorsDidChangeNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.needsDisplay = true
+        }
+    }
+
+    required init?(coder: NSCoder) { fatalError("not used") }
+
+    deinit { accentObserver.map(NotificationCenter.default.removeObserver) }
+
+    override var wantsUpdateLayer: Bool { true }
+
+    override func updateLayer() {
+        layer?.borderColor = NSColor.controlAccentColor.cgColor
     }
 }
 
